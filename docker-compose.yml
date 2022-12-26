@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  postgres:
+    container_name: ft_postgres
+    image: postgres:13
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=ft
+      - POSTGRES_PASSWORD=ft
+      - POSTGRES_DB=ft
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - postgres
+
+  pgadmin:
+    links:
+      - postgres:postgres
+    container_name: ft_pgadmin
+    image: dpage/pgadmin4
+    ports:
+      - 8080:80
+    volumes:
+      - pg_admin_data:/root/.pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=ft@ft.com
+      - PGADMIN_DEFAULT_PASSWORD=ft
+    networks:
+      - postgres
+
+volumes:
+  pg_data:
+  pg_admin_data:
+
+networks:
+  postgres:
+    driver: bridge

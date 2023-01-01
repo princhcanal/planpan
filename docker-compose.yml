@@ -2,16 +2,16 @@ version: "3"
 
 services:
   postgres:
-    container_name: ft_postgres
+    container_name: planpan_postgres
     image: postgres:13
     ports:
       - 5432:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=ft
-      - POSTGRES_PASSWORD=ft
-      - POSTGRES_DB=ft
+      - POSTGRES_USER=planpan
+      - POSTGRES_PASSWORD=planpan
+      - POSTGRES_DB=planpan
       - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
       - postgres
@@ -19,15 +19,15 @@ services:
   pgadmin:
     links:
       - postgres:postgres
-    container_name: ft_pgadmin
+    container_name: planpan_pgadmin
     image: dpage/pgadmin4
     ports:
       - 8080:80
     volumes:
       - pg_admin_data:/root/.pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=ft@ft.com
-      - PGADMIN_DEFAULT_PASSWORD=ft
+      - PGADMIN_DEFAULT_EMAIL=planpan@planpan.com
+      - PGADMIN_DEFAULT_PASSWORD=planpan
     networks:
       - postgres
 

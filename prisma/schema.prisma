@@ -16,19 +16,22 @@ datasource db {
 
 // Necessary for Next auth
 model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  userId            String   @map("user_id")
   type              String
   provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  providerAccountId String   @map("provider_account_id")
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?  @db.Text
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -39,19 +42,25 @@ model Session {
   sessionToken String   @unique @map("session_token")
   userId       String   @map("user_id")
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model User {
   id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   name          String?
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
+
   accounts      Account[]
   sessions      Session[]
+  guap          Guap[]
+  externalGuaps ExternalGuap[]
 
   @@map("users")
 }
@@ -63,4 +72,81 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Guap {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  userId      String   @map("user_id")
+  name        String
+  description String?  @db.Text
+  balance     Float
+  image       String?  @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@map("guaps")
+}
+
+model ExternalGuap {
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  userId      String           @map("user_id")
+  name        String
+  description String?          @db.Text
+  image       String?          @db.Text
+  type        ExternalGuapType
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@map("external_guaps")
+}
+
+enum ExternalGuapType {
+  BILLER
+  PEER
+}
+
+model Transaction {
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  date           DateTime        @default(now())
+  amount         Float
+  description    String?
+  guapId         String?         @map("guap_id")
+  externalGuapId String?         @map("external_guap_id")
+  image          String?         @db.Text
+  type           TransactionType
+
+  guap         Guap?         @relation(fields: [guapId], references: [id], onDelete: Cascade)
+  externalGuap ExternalGuap? @relation(fields: [externalGuapId], references: [id], onDelete: Cascade)
+
+  attachments Attachment[]
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOMING
+  OUTGOING
+}
+
+model Attachment {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  name          String
+  attachmentUrl String?  @map("attachment_url") @db.Text
+  transactionId String
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
 }

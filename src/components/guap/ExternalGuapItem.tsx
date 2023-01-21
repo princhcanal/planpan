@@ -2,12 +2,13 @@ import { ExternalGuapType, type ExternalGuap } from "@prisma/client";
 import { Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { Dialog } from "../primitives/Dialog";
-import { Form } from "../form/Form";
+import { externalGuapSchema, Form } from "../form/Form";
 import { trpc } from "../../utils/trpc";
-import { externalGuapSchema, withId } from "../../types/zod";
 import { type z } from "zod";
 import { Button } from "../ui/Button";
 import { AlertDialog } from "../primitives/AlertDialog";
+import { mapEnumToLabelValuePair } from "../../utils";
+import { withId } from "../../types/zod";
 
 interface ExternalGuapItemProps {
   externalGuap: ExternalGuap;
@@ -67,8 +68,9 @@ export const ExternalGuapItem: React.FC<ExternalGuapItemProps> = ({
                   type: "hidden",
                 },
                 type: {
-                  options: Object.values(ExternalGuapType),
+                  options: mapEnumToLabelValuePair(ExternalGuapType),
                   label: "Type",
+                  hidden: true,
                 },
               }}
               defaultValues={{

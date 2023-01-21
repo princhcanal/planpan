@@ -9,6 +9,7 @@ import { type z } from "zod";
 import { Button } from "../ui/Button";
 import { AlertDialog } from "../primitives/AlertDialog";
 import numeral from "numeral";
+import Link from "next/link";
 
 interface GuapItemProps {
   guap: Guap;
@@ -60,7 +61,7 @@ export const GuapItem: React.FC<GuapItemProps> = ({ guap }) => {
                   label: "Description",
                 },
                 balance: {
-                  placeholder: "5000",
+                  placeholder: "5,000",
                   label: "Balance",
                 },
                 id: {
@@ -98,7 +99,10 @@ export const GuapItem: React.FC<GuapItemProps> = ({ guap }) => {
           />
         </div>
       </div>
-      <h3 className="font-semibold">{guap.name}</h3>
+
+      <Link href={`/guaps/${guap.id}`}>
+        <h3 className="font-semibold">{guap.name}</h3>
+      </Link>
       <p className="text-gray-400">{guap.description}</p>
     </div>
   );

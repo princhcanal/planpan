@@ -3,6 +3,11 @@ import { externalGuap, withId } from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
 
 export const externalGuapRouter = router({
+  getAll: protectedProcedure.query(({ ctx }) => {
+    return ctx.prisma.externalGuap.findMany({
+      where: { userId: ctx.session.user.id },
+    });
+  }),
   getAllPeers: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.externalGuap.findMany({
       where: { userId: ctx.session.user.id, type: ExternalGuapType.PEER },

@@ -120,7 +120,8 @@ model Transaction {
   date           DateTime        @default(now())
   amount         Float
   description    String?
-  guapId         String?         @map("guap_id")
+  guapId         String          @map("guap_id")
+  internalGuapId String?         @map("internal_guap_id")
   externalGuapId String?         @map("external_guap_id")
   image          String?         @db.Text
   type           TransactionType

@@ -1,10 +1,10 @@
 import { type NextPage } from "next";
-import { Form } from "../components/form/Form";
-import { GuapItem } from "../components/guap/GuapItem";
-import { Dialog } from "../components/primitives/Dialog";
-import { Button } from "../components/ui/Button";
-import { guap } from "../types/zod";
-import { trpc } from "../utils/trpc";
+import { Form } from "../../components/form/Form";
+import { GuapItem } from "../../components/guap/GuapItem";
+import { Dialog } from "../../components/primitives/Dialog";
+import { Button } from "../../components/ui/Button";
+import { guap } from "../../types/zod";
+import { trpc } from "../../utils/trpc";
 import { type z } from "zod";
 import { useState } from "react";
 
@@ -48,7 +48,7 @@ const Guaps: NextPage = () => {
                 type: "textarea",
               },
               balance: {
-                placeholder: "5000",
+                placeholder: "5,000",
                 label: "Balance",
               },
             }}

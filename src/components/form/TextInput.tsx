@@ -32,7 +32,7 @@ export const TextInput = ({ type, label, placeholder }: TextInputProps) => {
 
       {type === "textarea" ? (
         <textarea
-          value={field.value ? field.value : ""} // conditional to prevent "uncontrolled to controlled" react warning
+          value={field.value} // conditional to prevent "uncontrolled to controlled" react warning
           onChange={(e) => {
             field.onChange(e.target.value);
           }}

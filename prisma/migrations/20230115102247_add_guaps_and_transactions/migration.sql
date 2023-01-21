@@ -1,10 +1,3 @@
-/*
-  Warnings:
-
-  - Added the required column `updated_at` to the `accounts` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `updated_at` to the `users` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "ExternalGuapType" AS ENUM ('BILLER', 'PEER');
 
@@ -55,7 +48,8 @@ CREATE TABLE "transactions" (
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "amount" DOUBLE PRECISION NOT NULL,
     "description" TEXT,
-    "guap_id" TEXT,
+    "guap_id" TEXT NOT NULL,
+    "internal_guap_id" TEXT,
     "external_guap_id" TEXT,
     "image" TEXT,
     "type" "TransactionType" NOT NULL,

@@ -1,13 +1,13 @@
 import { ExternalGuapType } from "@prisma/client";
 import { type NextPage } from "next";
 import { useState } from "react";
-import { Form } from "../components/form/Form";
+import { externalGuapSchema, Form } from "../components/form/Form";
 import { ExternalGuapItem } from "../components/guap/ExternalGuapItem";
 import { Dialog } from "../components/primitives/Dialog";
 import { Button } from "../components/ui/Button";
-import { externalGuapSchema } from "../types/zod";
 import { trpc } from "../utils/trpc";
 import { type z } from "zod";
+import { mapEnumToLabelValuePair } from "../utils";
 
 const Peers: NextPage = () => {
   const utils = trpc.useContext();
@@ -21,7 +21,7 @@ const Peers: NextPage = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onSubmit = (data: z.infer<typeof externalGuapSchema>) => {
-    createPeer.mutate(data);
+    createPeer.mutate({ ...data, type: data.type as ExternalGuapType });
   };
 
   return (
@@ -49,7 +49,7 @@ const Peers: NextPage = () => {
                 type: "textarea",
               },
               type: {
-                options: Object.values(ExternalGuapType),
+                options: mapEnumToLabelValuePair(ExternalGuapType),
                 label: "Type",
                 hidden: true,
               },

@@ -20,6 +20,7 @@ interface SelectProps {
   placeholder?: string;
   defaultValue?: string;
   hidden?: boolean;
+  errorMessage?: string;
 }
 
 export const Select = ({
@@ -28,8 +29,9 @@ export const Select = ({
   label,
   placeholder,
   hidden,
+  errorMessage,
 }: SelectProps) => {
-  const { field, error, formState } = useTsController<string>();
+  const { field, error } = useTsController<string>();
 
   return (
     <fieldset className={classNames("mb-2", { hidden })}>
@@ -98,11 +100,8 @@ export const Select = ({
       {error?.errorMessage && (
         <p className="text-xs text-red-500">{error.errorMessage}</p>
       )}
-      {formState.errors[""]?.message && (
-        <p className="text-xs text-red-500">
-          {formState.errors[""]?.message.toString()}
-        </p>
-      )}
+
+      {errorMessage && <p className="text-xs text-red-500">{errorMessage}</p>}
     </fieldset>
   );
 };

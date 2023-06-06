@@ -1,6 +1,10 @@
-import { ExternalGuapType, TransactionType } from "@prisma/client";
+import { ExternalGuapType } from "@prisma/client";
 import { z } from "zod";
-import { dateStringSchema } from "../components/form/Form";
+import {
+  entitySelectSchema,
+  nullishDateStringSchema,
+  transactionTypeSchema,
+} from "../components/form/Form";
 
 export const withId = z.object({ id: z.string().cuid() });
 
@@ -16,42 +20,21 @@ export const externalGuap = z.object({
   type: z.nativeEnum(ExternalGuapType),
 });
 
-// TODO: refactor refinement
-export const transaction = z
-  .object({
-    date: dateStringSchema,
-    amount: z.number().positive(),
-    description: z.string().nullish(),
-    guapId: z.string().cuid(),
-    internalGuapId: z.string().cuid().nullish(),
-    externalGuapId: z.string().cuid().nullish(),
-    type: z.nativeEnum(TransactionType),
-  })
-  .refine(
-    (data) =>
-      (!!data.internalGuapId && !data.externalGuapId) ||
-      (!data.internalGuapId && !!data.externalGuapId),
-    {
-      message: "Either Guap or Peer/Biller required",
-    }
-  );
+export const transactionRefine = (data: z.infer<typeof transaction>) =>
+  (!!data.internalGuapId && !data.externalGuapId) ||
+  (!data.internalGuapId && !!data.externalGuapId);
 
-export const transactionWithId = z
-  .object({
-    date: dateStringSchema,
-    amount: z.number().positive(),
-    description: z.string().nullish(),
-    guapId: z.string().cuid(),
-    internalGuapId: z.string().cuid().nullish(),
-    externalGuapId: z.string().cuid().nullish(),
-    type: z.nativeEnum(TransactionType),
-  })
-  .merge(withId)
-  .refine(
-    (data) =>
-      (!!data.internalGuapId && !data.externalGuapId) ||
-      (!data.internalGuapId && !!data.externalGuapId),
-    {
-      message: "Either Guap or Peer/Biller required",
-    }
-  );
+export const transactionRefineMessage = "Either Guap or Peer/Biller required";
+
+export const transaction = z.object({
+  guapId: z.string().cuid(),
+  type: transactionTypeSchema,
+  internalGuapId: entitySelectSchema,
+  externalGuapId: entitySelectSchema,
+  sendToGuap: z.boolean().nullish(),
+  amount: z.number().positive(),
+  description: z.string().nullish(),
+  date: nullishDateStringSchema,
+});
+
+export const transactionWithId = transaction.merge(withId);

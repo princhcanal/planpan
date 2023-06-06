@@ -86,7 +86,8 @@ model Guap {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  transactions Transaction[]
+  transactions         Transaction[] @relation("guap")
+  internalTransactions Transaction[] @relation("internalGuap")
 
   @@map("guaps")
 }
@@ -126,7 +127,8 @@ model Transaction {
   image          String?         @db.Text
   type           TransactionType
 
-  guap         Guap?         @relation(fields: [guapId], references: [id], onDelete: Cascade)
+  guap         Guap?         @relation("guap", fields: [guapId], references: [id], onDelete: Cascade)
+  internalGuap Guap?         @relation("internalGuap", fields: [internalGuapId], references: [id], onDelete: Cascade)
   externalGuap ExternalGuap? @relation(fields: [externalGuapId], references: [id], onDelete: Cascade)
 
   attachments Attachment[]

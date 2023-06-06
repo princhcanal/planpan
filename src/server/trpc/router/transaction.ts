@@ -1,7 +1,13 @@
 import { type PrismaClient, TransactionType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { type z } from "zod";
-import { transaction, transactionWithId, withId } from "../../../types/zod";
+import {
+  transaction,
+  transactionRefine,
+  transactionRefineMessage,
+  transactionWithId,
+  withId,
+} from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
 
 export const transactionRouter = router({
@@ -14,23 +20,40 @@ export const transactionRouter = router({
     .input(withId)
     .query(({ ctx, input }) => {
       return ctx.prisma.transaction.findMany({
-        where: { guapId: input.id, guap: { userId: ctx.session.user.id } },
-        include: { externalGuap: true },
+        where: {
+          OR: [
+            { guapId: input.id, guap: { userId: ctx.session.user.id } },
+            {
+              internalGuapId: input.id,
+              internalGuap: { userId: ctx.session.user.id },
+            },
+          ],
+        },
+        include: { guap: true, externalGuap: true, internalGuap: true },
+        orderBy: { date: "desc" },
       });
     }),
   createTransaction: protectedProcedure
-    .input(transaction)
+    .input(transaction.refine(transactionRefine, transactionRefineMessage))
     .mutation(async ({ ctx, input }) => {
       preValidate(input);
+
+      delete input.sendToGuap;
 
       await doTransaction(ctx.prisma, ctx.session.user.id, input);
 
-      return ctx.prisma.transaction.create({ data: input });
+      return ctx.prisma.transaction.create({
+        data: { ...input, date: input.date ?? new Date().toISOString() },
+      });
     }),
   editTransaction: protectedProcedure
-    .input(transactionWithId)
+    .input(
+      transactionWithId.refine(transactionRefine, transactionRefineMessage)
+    )
     .mutation(async ({ ctx, input }) => {
       preValidate(input);
+
+      delete input.sendToGuap;
 
       // reset balances then edit transaction
       await resetBalances(ctx.prisma, ctx.session.user.id, input);
@@ -38,11 +61,13 @@ export const transactionRouter = router({
 
       return ctx.prisma.transaction.updateMany({
         where: { id: input.id, guap: { userId: ctx.session.user.id } },
-        data: input,
+        data: { ...input, date: input.date ?? new Date().toISOString() },
       });
     }),
   deleteTransaction: protectedProcedure
-    .input(transactionWithId)
+    .input(
+      transactionWithId.refine(transactionRefine, transactionRefineMessage)
+    )
     .mutation(async ({ ctx, input }) => {
       // reset balances then delete transaction
       await resetBalances(ctx.prisma, ctx.session.user.id, input);
@@ -116,7 +141,7 @@ const doTransaction = async (
     where: { id: input.guapId, userId },
   });
 
-  if (input.amount > guap.balance) {
+  if (input.amount > guap.balance && input.type === TransactionType.OUTGOING) {
     throw new TRPCError({ message: "Not enough balance", code: "BAD_REQUEST" });
   }
 

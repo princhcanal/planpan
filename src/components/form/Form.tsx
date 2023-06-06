@@ -23,6 +23,11 @@ export const dateStringSchema = createUniqueFieldSchema(
   "dateStringSchema"
 );
 
+export const nullishDateStringSchema = createUniqueFieldSchema(
+  z.string().datetime().nullish(),
+  "nullishDateStringSchema"
+);
+
 export const transactionTypeSchema = createUniqueFieldSchema(
   z.enum([TransactionType.OUTGOING, TransactionType.INCOMING]),
   "transactionTypeSchema"
@@ -36,6 +41,7 @@ export const entitySelectSchema = createUniqueFieldSchema(
 const mapping = [
   [z.string(), TextInput] as const,
   [dateStringSchema, DateInput] as const,
+  [nullishDateStringSchema, DateInput] as const,
   [externalGuapTypeSchema, Select] as const,
   [transactionTypeSchema, Select] as const,
   [entitySelectSchema, Select] as const,

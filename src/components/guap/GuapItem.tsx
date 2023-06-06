@@ -59,6 +59,7 @@ export const GuapItem: React.FC<GuapItemProps> = ({ guap }) => {
                 description: {
                   placeholder: "Main Savings Account",
                   label: "Description",
+                  type: "textarea",
                 },
                 balance: {
                   placeholder: "5,000",

@@ -7,10 +7,10 @@ import React from "react";
 
 interface CheckboxProps {
   text: string;
-  onChange?: (checked: boolean) => void;
+  disabled?: boolean;
 }
 
-export const Checkbox = ({ text, onChange }: CheckboxProps) => {
+export const Checkbox = ({ text, disabled }: CheckboxProps) => {
   const { field } = useTsController<boolean>();
 
   return (
@@ -18,18 +18,13 @@ export const Checkbox = ({ text, onChange }: CheckboxProps) => {
       <CheckboxPrimitive.Root
         id={field.value?.toString()}
         checked={field.value}
-        onCheckedChange={(val) => {
-          const checked = val.valueOf();
-          field.onChange(checked as boolean);
-          if (onChange) {
-            onChange(checked as boolean);
-          }
-        }}
+        onCheckedChange={(val) => field.onChange(val as boolean)}
         className={cx(
           "flex h-5 w-5 items-center justify-center rounded",
           "radix-state-checked:bg-purple-600 radix-state-unchecked:bg-gray-100 dark:radix-state-unchecked:bg-gray-900",
           "focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75"
         )}
+        disabled={disabled}
       >
         <CheckboxPrimitive.Indicator>
           <CheckIcon className="h-4 w-4 self-center text-white" />

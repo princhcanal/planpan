@@ -3,15 +3,23 @@ import className from "classnames";
 import { NumericFormat } from "react-number-format";
 import numeral from "numeral";
 import { Label } from "@radix-ui/react-label";
+import { TextInput } from "./TextInput";
 
 interface NumberInputProps {
   label?: string;
   placeholder?: string;
   max?: number;
   min?: number;
+  errorMessage?: string;
 }
 
-export const NumberInput = ({ label, placeholder }: NumberInputProps) => {
+export const NumberInput = ({
+  label,
+  placeholder,
+  max,
+  min,
+  errorMessage,
+}: NumberInputProps) => {
   const { field, error } = useTsController<number>();
 
   return (
@@ -30,6 +38,26 @@ export const NumberInput = ({ label, placeholder }: NumberInputProps) => {
         onChange={(e) => {
           field.onChange(numeral(e.target.value).value() ?? undefined);
         }}
+        isAllowed={(values) => {
+          const { floatValue } = values;
+
+          if (floatValue === undefined) {
+            return true;
+          }
+
+          let isMaxValid = true;
+          let isMinValid = true;
+
+          if (max !== undefined && floatValue > max) {
+            isMaxValid = false;
+          }
+
+          if (min !== undefined && floatValue < min) {
+            isMinValid = false;
+          }
+
+          return isMaxValid && isMinValid;
+        }}
         id={field.name}
         thousandSeparator
         allowNegative={false}
@@ -45,6 +73,10 @@ export const NumberInput = ({ label, placeholder }: NumberInputProps) => {
 
       {error?.errorMessage && (
         <span className="text-xs text-red-500">{error.errorMessage}</span>
+      )}
+
+      {errorMessage && (
+        <span className="text-xs text-red-500">{errorMessage}</span>
       )}
     </fieldset>
   );

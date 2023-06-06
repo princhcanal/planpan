@@ -1,22 +1,21 @@
 import { TransactionType } from "@prisma/client";
-import { TrashIcon } from "@radix-ui/react-icons";
 import { type NextPage } from "next";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import { z } from "zod";
-import {
-  dateStringSchema,
-  entitySelectSchema,
-  Form,
-  transactionTypeSchema,
-} from "../../components/form/Form";
-import { AlertDialog } from "../../components/primitives/AlertDialog";
+import { useEffect, useState } from "react";
+import { type z } from "zod";
+import { Form } from "../../components/form/Form";
 import { Dialog } from "../../components/primitives/Dialog";
 import { Button } from "../../components/ui/Button";
 import { trpc } from "../../utils/trpc";
 import numeral from "numeral";
 import { mapEnumToLabelValuePair } from "../../utils";
 import { useForm } from "react-hook-form";
+import { TransactionItem } from "../../components/transaction/TransactionItem";
+import {
+  transaction,
+  transactionRefine,
+  transactionRefineMessage,
+} from "../../types/zod";
 
 const GuapDetails: NextPage = () => {
   const {
@@ -45,56 +44,86 @@ const GuapDetails: NextPage = () => {
       setIsCreateDialogOpen(false);
     },
   });
-  const deleteTransaction = trpc.transaction.deleteTransaction.useMutation({
-    onSuccess: () => {
-      utils.guap.getOne.invalidate({ id: id as string });
-      utils.transaction.getTransactionsByGuap.invalidate({
-        id: id as string,
-      });
-      setIsDeleteDialogOpen(false);
-    },
-  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [sendToGuap, setSendToGuap] = useState(false);
 
+  const transactionSchema = transaction.refine(
+    transactionRefine,
+    transactionRefineMessage
+  );
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
-    createTransaction.mutate({
-      ...data,
-      type: data.type as TransactionType,
-    });
-  };
-
-  const transactionSchema = z
-    .object({
-      externalGuapId: entitySelectSchema,
-      internalGuapId: entitySelectSchema,
-      sendToGuap: z.boolean(),
-      guapId: z.string().cuid(),
-      type: transactionTypeSchema,
-      amount: z
-        .number()
-        .positive()
-        .max(guap.data?.balance ?? 0, "Not enough balance"),
-      description: z.string().nullish(),
-      date: dateStringSchema,
-    })
-    .refine(
-      (data) =>
-        (!!data.internalGuapId && !data.externalGuapId) ||
-        (!data.internalGuapId && !!data.externalGuapId),
-      {
-        message: "Either Guap or Peer/Biller required",
+    if (guap.data?.balance) {
+      if (
+        watchAmount > guap.data.balance &&
+        watchType === TransactionType.OUTGOING
+      ) {
+      } else {
+        createTransaction.mutate(data);
       }
-    );
+    }
+  };
 
   const form = useForm<z.infer<typeof transactionSchema>>();
 
   const defaultValues = {
     type: TransactionType.OUTGOING,
     guapId: guap.data?.id,
-    date: new Date().toISOString(),
     sendToGuap: false,
+  };
+
+  const watchType = form.watch("type");
+  const watchSendToGuap = form.watch("sendToGuap");
+  const watchAmount = form.watch("amount");
+  const watchExternalGuapId = form.watch("externalGuapId");
+  const watchInternalGuapId = form.watch("internalGuapId");
+
+  const [amountErrorMessage, setAmountErrorMessage] = useState("");
+  const [guapErrorMessage, setGuapErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (watchType === TransactionType.INCOMING) {
+      form.resetField("sendToGuap", { defaultValue: false });
+      form.resetField("internalGuapId", {
+        defaultValue: undefined,
+      });
+    }
+  }, [watchType, form]);
+
+  useEffect(() => {
+    form.resetField("externalGuapId", {
+      defaultValue: undefined,
+    });
+    form.resetField("internalGuapId", {
+      defaultValue: undefined,
+    });
+  }, [watchSendToGuap, form]);
+
+  useEffect(() => {
+    if (guap.data?.balance) {
+      if (
+        watchAmount > guap.data.balance &&
+        watchType === TransactionType.OUTGOING
+      ) {
+        setAmountErrorMessage(
+          `Not enough balance (₱ ${numeral(guap.data.balance).format(
+            "0,0.00"
+          )})`
+        );
+      } else {
+        setAmountErrorMessage("");
+      }
+    }
+  }, [watchAmount, watchType, form, guap.data?.balance]);
+
+  useEffect(() => {
+    if (!!watchExternalGuapId || !!watchInternalGuapId) {
+      setGuapErrorMessage("");
+    }
+  }, [watchExternalGuapId, watchInternalGuapId]);
+
+  const setGuapIdErrors = () => {
+    if (!watchExternalGuapId && !watchInternalGuapId) {
+      setGuapErrorMessage("Must choose either Guap or Peer/Biller");
+    }
   };
 
   return (
@@ -107,9 +136,6 @@ const GuapDetails: NextPage = () => {
           isOpen={isCreateDialogOpen}
           setIsOpen={(open) => {
             setIsCreateDialogOpen(open);
-            if (!open.valueOf()) {
-              setSendToGuap(false);
-            }
             form.reset(defaultValues);
           }}
         >
@@ -118,39 +144,12 @@ const GuapDetails: NextPage = () => {
             schema={transactionSchema}
             onSubmit={onSubmit}
             props={{
-              description: {
-                placeholder: "Groceries",
-                label: "Description",
-                type: "textarea",
-              },
-              amount: {
-                placeholder: "5,000",
-                label: "Amount",
-                max: guap.data?.balance,
-              },
-              date: {
-                label: "Date",
-                hidden: true,
-              },
               guapId: {
                 type: "hidden",
               },
               type: {
                 options: mapEnumToLabelValuePair(TransactionType),
                 label: "Type",
-                hidden: true,
-              },
-              sendToGuap: {
-                text: "Send to guap?",
-                onChange: (checked: boolean) => {
-                  setSendToGuap(checked);
-                  form.resetField("externalGuapId", {
-                    defaultValue: undefined,
-                  });
-                  form.resetField("internalGuapId", {
-                    defaultValue: undefined,
-                  });
-                },
               },
               internalGuapId: {
                 label: "Send To",
@@ -160,7 +159,8 @@ const GuapDetails: NextPage = () => {
                     label: guap.name,
                     value: guap.id,
                   })) ?? [],
-                hidden: !sendToGuap,
+                hidden: !watchSendToGuap,
+                errorMessage: guapErrorMessage,
               },
               externalGuapId: {
                 label: "Send To",
@@ -170,7 +170,26 @@ const GuapDetails: NextPage = () => {
                     label: guap.name,
                     value: guap.id,
                   })) ?? [],
-                hidden: sendToGuap,
+                hidden: watchSendToGuap ?? false,
+                errorMessage: guapErrorMessage,
+              },
+              sendToGuap: {
+                text: "Send to guap?",
+                disabled: watchType === TransactionType.INCOMING,
+              },
+              amount: {
+                placeholder: "5,000",
+                label: "Amount",
+                max: 1_000_000_000_000,
+                errorMessage: amountErrorMessage,
+              },
+              description: {
+                placeholder: "Groceries",
+                label: "Description",
+                type: "textarea",
+              },
+              date: {
+                label: "Date",
               },
             }}
             defaultValues={defaultValues}
@@ -180,7 +199,7 @@ const GuapDetails: NextPage = () => {
                   isLoading={createTransaction.isLoading}
                   type="submit"
                   onClick={() => {
-                    form.clearErrors();
+                    setGuapIdErrors();
                   }}
                 >
                   {createTransaction.isLoading ? "Saving..." : "Save"}
@@ -197,35 +216,13 @@ const GuapDetails: NextPage = () => {
 
       <h2 className="mb-4 text-2xl font-semibold">Transaction History</h2>
 
-      {transactions.data?.map((transaction) => {
-        return (
-          <div
-            key={transaction.id}
-            className="mb-4 rounded-md border border-black p-2"
-          >
-            <p>Amount: {transaction.amount}</p>
-            <p>Description: {transaction.description}</p>
-            <p>Date: {transaction.date.toDateString()}</p>
-            <p>Sent To: {transaction.externalGuap?.name}</p>
-            <AlertDialog
-              openButton={<TrashIcon className="cursor-pointer" />}
-              onConfirm={() => {
-                deleteTransaction.mutate({
-                  ...transaction,
-                  date: transaction.date.toISOString(),
-                });
-              }}
-              isLoading={deleteTransaction.isLoading}
-              isOpen={isDeleteDialogOpen}
-              setIsOpen={setIsDeleteDialogOpen}
-              title="Delete Transaction?"
-              description="Are you sure you want to delete this transaction? This action cannot be undone"
-              confirmText="Delete"
-              loadingConfirmText="Deleting"
-            />
-          </div>
-        );
-      })}
+      {transactions.data?.map((transaction) => (
+        <TransactionItem
+          transaction={transaction}
+          key={transaction.id}
+          guapId={id as string}
+        />
+      ))}
     </div>
   );
 };

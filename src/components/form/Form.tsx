@@ -14,7 +14,7 @@ export const externalGuapTypeSchema = createUniqueFieldSchema(
 
 export const externalGuapSchema = z.object({
   name: z.string().min(1),
-  description: z.string().nullish(),
+  description: z.string().optional(),
   type: externalGuapTypeSchema,
 });
 
@@ -23,9 +23,9 @@ export const dateStringSchema = createUniqueFieldSchema(
   "dateStringSchema"
 );
 
-export const nullishDateStringSchema = createUniqueFieldSchema(
-  z.string().datetime().nullish(),
-  "nullishDateStringSchema"
+export const optionalDateStringSchema = createUniqueFieldSchema(
+  z.string().datetime().optional(),
+  "optionalDateStringSchema"
 );
 
 export const transactionTypeSchema = createUniqueFieldSchema(
@@ -34,14 +34,14 @@ export const transactionTypeSchema = createUniqueFieldSchema(
 );
 
 export const entitySelectSchema = createUniqueFieldSchema(
-  z.string().cuid().nullish(),
+  z.string().cuid().optional(),
   "entitySelectSchema"
 );
 
 const mapping = [
   [z.string(), TextInput] as const,
   [dateStringSchema, DateInput] as const,
-  [nullishDateStringSchema, DateInput] as const,
+  [optionalDateStringSchema, DateInput] as const,
   [externalGuapTypeSchema, Select] as const,
   [transactionTypeSchema, Select] as const,
   [entitySelectSchema, Select] as const,

@@ -2,7 +2,7 @@ import { ExternalGuapType } from "@prisma/client";
 import { z } from "zod";
 import {
   entitySelectSchema,
-  nullishDateStringSchema,
+  optionalDateStringSchema,
   transactionTypeSchema,
 } from "../components/form/Form";
 
@@ -10,13 +10,13 @@ export const withId = z.object({ id: z.string().cuid() });
 
 export const guap = z.object({
   name: z.string().min(1, "Required"),
-  description: z.string().nullish(),
+  description: z.string().optional(),
   balance: z.number().nonnegative(),
 });
 
 export const externalGuap = z.object({
   name: z.string().min(1, "Required"),
-  description: z.string().nullish(),
+  description: z.string().optional(),
   type: z.nativeEnum(ExternalGuapType),
 });
 
@@ -31,10 +31,10 @@ export const transaction = z.object({
   type: transactionTypeSchema,
   internalGuapId: entitySelectSchema,
   externalGuapId: entitySelectSchema,
-  sendToGuap: z.boolean().nullish(),
+  sendToGuap: z.boolean().optional(),
   amount: z.number().positive(),
-  description: z.string().nullish(),
-  date: nullishDateStringSchema,
+  description: z.string().optional(),
+  date: optionalDateStringSchema,
 });
 
 export const transactionWithId = transaction.merge(withId);

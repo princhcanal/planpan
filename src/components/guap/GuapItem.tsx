@@ -1,15 +1,31 @@
 import { type Guap } from "@prisma/client";
-import { Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
-import { Dialog } from "../primitives/Dialog";
+import { useEffect, useState } from "react";
 import { Form } from "../form/Form";
 import { trpc } from "../../utils/trpc";
-import { guap as guapSchema, withId } from "../../types/zod";
+import { externalGuap, guap as guapSchema, withId } from "../../types/zod";
 import { type z } from "zod";
 import { Button } from "../ui/Button";
-import { AlertDialog } from "../primitives/AlertDialog";
 import numeral from "numeral";
 import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/Dialog";
+import { Pencil, Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/AlertDialog";
 
 interface GuapItemProps {
   guap: Guap;
@@ -42,62 +58,82 @@ export const GuapItem: React.FC<GuapItemProps> = ({ guap }) => {
       <div className="flex items-center justify-between">
         <strong>&#8369; {numeral(guap.balance).format("0,0.00")}</strong>
         <div className="flex gap-2">
-          <Dialog
-            openButton={<Pencil1Icon className="cursor-pointer" />}
-            title="Edit Guap"
-            isOpen={isEditDialogOpen}
-            setIsOpen={setIsEditDialogOpen}
-          >
-            <Form
-              schema={editGuapSchema}
-              onSubmit={onSubmit}
-              props={{
-                name: {
-                  placeholder: "BPI Savings Account",
-                  label: "Name",
-                },
-                description: {
-                  placeholder: "Main Savings Account",
-                  label: "Description",
-                  type: "textarea",
-                },
-                balance: {
-                  placeholder: "5,000",
-                  label: "Balance",
-                },
-                id: {
-                  type: "hidden",
-                },
-              }}
-              defaultValues={{
-                name: guap.name,
-                description: guap.description,
-                balance: guap.balance,
-                id: guap.id,
-              }}
-              renderAfter={() => (
-                <div className="mt-4 flex justify-end">
-                  <Button isLoading={editGuap.isLoading}>
-                    {editGuap.isLoading ? "Saving" : "Save"}
-                  </Button>
-                </div>
-              )}
-            />
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogTrigger>
+              <Pencil className="cursor-pointer" />
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Guap</DialogTitle>
+              </DialogHeader>
+
+              <Form
+                schema={editGuapSchema}
+                onSubmit={onSubmit}
+                props={{
+                  name: {
+                    placeholder: "BPI Savings Account",
+                    label: "Name",
+                  },
+                  description: {
+                    placeholder: "Main Savings Account",
+                    label: "Description",
+                    type: "textarea",
+                  },
+                  balance: {
+                    placeholder: "5,000",
+                    label: "Balance",
+                  },
+                  id: {
+                    type: "hidden",
+                  },
+                }}
+                defaultValues={{
+                  name: guap.name,
+                  description: guap.description ?? undefined,
+                  balance: guap.balance,
+                  id: guap.id,
+                }}
+                renderAfter={() => (
+                  <div className="mt-4 flex justify-end">
+                    <Button isLoading={editGuap.isLoading}>
+                      {editGuap.isLoading ? "Saving" : "Save"}
+                    </Button>
+                  </div>
+                )}
+              />
+            </DialogContent>
           </Dialog>
 
           <AlertDialog
-            openButton={<TrashIcon className="cursor-pointer" />}
-            onConfirm={() => {
-              deleteGuap.mutate({ id: guap.id });
-            }}
-            isLoading={deleteGuap.isLoading}
-            isOpen={isDeleteDialogOpen}
-            setIsOpen={setIsDeleteDialogOpen}
-            title="Delete Guap?"
-            description="Are you sure you want to delete this guap? This action cannot be undone"
-            confirmText="Delete"
-            loadingConfirmText="Deleting"
-          />
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+          >
+            <AlertDialogTrigger>
+              <Trash className="cursor-pointer" />
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Guap?</AlertDialogTitle>
+                Are you sure you want to delete this guap? This action cannot be
+                undone
+                <AlertDialogDescription></AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+                <AlertDialogAction
+                  onClick={() => deleteGuap.mutate({ id: guap.id })}
+                  isLoading={deleteGuap.isLoading}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

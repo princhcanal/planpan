@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Checkbox } from "./Checkbox";
 import { DateInput } from "./DateInput";
 import { NumberInput } from "./NumberInput";
-import { Select } from "./Select";
+import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
 
 export const externalGuapTypeSchema = createUniqueFieldSchema(
@@ -42,9 +42,9 @@ const mapping = [
   [z.string(), TextInput] as const,
   [dateStringSchema, DateInput] as const,
   [optionalDateStringSchema, DateInput] as const,
-  [externalGuapTypeSchema, Select] as const,
-  [transactionTypeSchema, Select] as const,
-  [entitySelectSchema, Select] as const,
+  [externalGuapTypeSchema, SelectInput] as const,
+  [transactionTypeSchema, SelectInput] as const,
+  [entitySelectSchema, SelectInput] as const,
   [z.number(), NumberInput] as const,
   [z.boolean(), Checkbox] as const,
 ] as const;

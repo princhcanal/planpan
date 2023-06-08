@@ -4,12 +4,22 @@ import {
   type Transaction,
   TransactionType,
 } from "@prisma/client";
-import { TrashIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { trpc } from "../../utils/trpc";
-import { AlertDialog } from "../primitives/AlertDialog";
 import numeral from "numeral";
 import Link from "next/link";
+import { Trash } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/AlertDialog";
 
 interface TransactionItemProps {
   transaction: Transaction & {
@@ -80,22 +90,43 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
             )}
         </p>
       )}
+
       <AlertDialog
-        openButton={<TrashIcon className="cursor-pointer" />}
-        onConfirm={() => {
-          deleteTransaction.mutate({
-            ...transaction,
-            date: transaction.date.toISOString(),
-          });
-        }}
-        isLoading={deleteTransaction.isLoading}
-        isOpen={isDeleteDialogOpen}
-        setIsOpen={setIsDeleteDialogOpen}
-        title="Delete Transaction?"
-        description="Are you sure you want to delete this transaction? This action cannot be undone"
-        confirmText="Delete"
-        loadingConfirmText="Deleting"
-      />
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogTrigger>
+          <Trash className="cursor-pointer" />
+        </AlertDialogTrigger>
+
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction?</AlertDialogTitle>
+            Are you sure you want to delete this transaction? This action cannot
+            be undone
+            <AlertDialogDescription></AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+
+            <AlertDialogAction
+              onClick={() =>
+                deleteTransaction.mutate({
+                  ...transaction,
+                  date: transaction.date.toISOString(),
+                  description: transaction.description ?? undefined,
+                  internalGuapId: transaction.internalGuapId ?? undefined,
+                  externalGuapId: transaction.externalGuapId ?? undefined,
+                })
+              }
+              isLoading={deleteTransaction.isLoading}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

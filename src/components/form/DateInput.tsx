@@ -1,17 +1,25 @@
+"use client";
+
 import { Label } from "@radix-ui/react-label";
 import { useTsController } from "@ts-react/form";
-import className from "classnames";
 
 interface DateInputProps {
   label?: string;
-  hidden?: boolean;
 }
 
-export const DateInput = ({ label, hidden }: DateInputProps) => {
+import * as React from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "../../lib/utils";
+import { Calendar } from "../ui/Calendar";
+import { Button } from "../ui/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover";
+
+export function DateInput({ label }: DateInputProps) {
   const { field, error } = useTsController<string>();
 
   return (
-    <fieldset className={className("mb-2", { hidden })}>
+    <fieldset>
       <div className="mb-2">
         <Label
           htmlFor={field.name}
@@ -21,25 +29,40 @@ export const DateInput = ({ label, hidden }: DateInputProps) => {
         </Label>
       </div>
 
-      <input
-        value={field.value ? field.value.split("T")[0] : ""}
-        onChange={(e) => {
-          field.onChange(new Date(e.target.value).toISOString());
-        }}
-        id={field.name}
-        type="date"
-        className={className(
-          "block w-full rounded-md p-2",
-          "text-sm text-gray-700 placeholder:text-gray-500 dark:text-gray-400 dark:placeholder:text-gray-600",
-          "border border-gray-400 focus-visible:border-transparent dark:border-gray-700 dark:bg-gray-800",
-          "focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75",
-          "resize-none"
-        )}
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !field.value && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {field.value ? (
+              format(new Date(field.value), "PPP")
+            ) : (
+              <span>Pick a date</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={field.value ? new Date(field.value) : undefined}
+            onSelect={(d) => {
+              if (d) {
+                field.onChange(d.toISOString());
+              }
+            }}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
 
       {error?.errorMessage && (
         <span className="text-xs text-red-500">{error.errorMessage}</span>
       )}
     </fieldset>
   );
-};
+}

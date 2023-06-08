@@ -1,19 +1,19 @@
 import { useTsController } from "@ts-react/form";
-import className from "classnames";
 import { NumericFormat } from "react-number-format";
 import numeral from "numeral";
 import { Label } from "@radix-ui/react-label";
-import { TextInput } from "./TextInput";
+import { inputClasses } from "../ui/Input";
 
-interface NumberInputProps {
-  label?: string;
-  placeholder?: string;
+export interface NumberInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
   max?: number;
   min?: number;
+  label?: string;
   errorMessage?: string;
 }
 
 export const NumberInput = ({
+  className,
   label,
   placeholder,
   max,
@@ -34,6 +34,7 @@ export const NumberInput = ({
       </div>
 
       <NumericFormat
+        id={field.name}
         value={field.value ? field.value : ""}
         onChange={(e) => {
           field.onChange(numeral(e.target.value).value() ?? undefined);
@@ -58,17 +59,11 @@ export const NumberInput = ({
 
           return isMaxValid && isMinValid;
         }}
-        id={field.name}
         thousandSeparator
         allowNegative={false}
         placeholder={placeholder}
         decimalScale={2}
-        className={className(
-          "mt-1 block w-full rounded-md p-2",
-          "text-sm text-gray-700 placeholder:text-gray-500 dark:text-gray-400 dark:placeholder:text-gray-600",
-          "border border-gray-400 focus-visible:border-transparent dark:border-gray-700 dark:bg-gray-800",
-          "focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75"
-        )}
+        className={inputClasses(className)}
       />
 
       {error?.errorMessage && (

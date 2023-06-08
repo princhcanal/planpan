@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { type z } from "zod";
 import { Form } from "../../components/form/Form";
-import { Dialog } from "../../components/primitives/Dialog";
 import { Button } from "../../components/ui/Button";
 import { trpc } from "../../utils/trpc";
 import numeral from "numeral";
@@ -16,6 +15,13 @@ import {
   transactionRefine,
   transactionRefineMessage,
 } from "../../types/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../components/ui/Dialog";
 
 const GuapDetails: NextPage = () => {
   const {
@@ -126,87 +132,107 @@ const GuapDetails: NextPage = () => {
     }
   };
 
+  const resetErrorMessages = () => {
+    setGuapErrorMessage("");
+    setAmountErrorMessage("");
+  };
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-3xl font-bold">{guap.data?.name}</h2>
         <Dialog
-          openButton={<Button>Create Transaction</Button>}
-          title="Create Transaction"
-          isOpen={isCreateDialogOpen}
-          setIsOpen={(open) => {
+          open={isCreateDialogOpen}
+          onOpenChange={(open) => {
             setIsCreateDialogOpen(open);
             form.reset(defaultValues);
+            resetErrorMessages();
           }}
         >
-          <Form
-            form={form}
-            schema={transactionSchema}
-            onSubmit={onSubmit}
-            props={{
-              guapId: {
-                type: "hidden",
-              },
-              type: {
-                options: mapEnumToLabelValuePair(TransactionType),
-                label: "Type",
-              },
-              internalGuapId: {
-                label: "Send To",
-                placeholder: "Choose Guap",
-                options:
-                  guapsExcludingSelf?.map((guap) => ({
-                    label: guap.name,
-                    value: guap.id,
-                  })) ?? [],
-                hidden: !watchSendToGuap,
-                errorMessage: guapErrorMessage,
-              },
-              externalGuapId: {
-                label: "Send To",
-                placeholder: "Choose Peer/Biller",
-                options:
-                  externalGuaps.data?.map((guap) => ({
-                    label: guap.name,
-                    value: guap.id,
-                  })) ?? [],
-                hidden: watchSendToGuap ?? false,
-                errorMessage: guapErrorMessage,
-              },
-              sendToGuap: {
-                text: "Send to guap?",
-                disabled: watchType === TransactionType.INCOMING,
-              },
-              amount: {
-                placeholder: "5,000",
-                label: "Amount",
-                max: 1_000_000_000_000,
-                errorMessage: amountErrorMessage,
-              },
-              description: {
-                placeholder: "Groceries",
-                label: "Description",
-                type: "textarea",
-              },
-              date: {
-                label: "Date",
-              },
-            }}
-            defaultValues={defaultValues}
-            renderAfter={() => (
-              <div className="mt-4 flex justify-end">
-                <Button
-                  isLoading={createTransaction.isLoading}
-                  type="submit"
-                  onClick={() => {
-                    setGuapIdErrors();
-                  }}
-                >
-                  {createTransaction.isLoading ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            )}
-          />
+          <DialogTrigger>
+            {mounted && <Button>Create Transaction</Button>}
+          </DialogTrigger>
+
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Transaction</DialogTitle>
+            </DialogHeader>
+
+            <Form
+              form={form}
+              schema={transactionSchema}
+              onSubmit={onSubmit}
+              props={{
+                guapId: {
+                  type: "hidden",
+                },
+                type: {
+                  options: mapEnumToLabelValuePair(TransactionType),
+                  label: "Type",
+                },
+                internalGuapId: {
+                  label: "Send To",
+                  placeholder: "Choose Guap",
+                  options:
+                    guapsExcludingSelf?.map((guap) => ({
+                      label: guap.name,
+                      value: guap.id,
+                    })) ?? [],
+                  hidden: !watchSendToGuap,
+                  errorMessage: guapErrorMessage,
+                },
+                externalGuapId: {
+                  label: "Send To",
+                  placeholder: "Choose Peer/Biller",
+                  options:
+                    externalGuaps.data?.map((guap) => ({
+                      label: guap.name,
+                      value: guap.id,
+                    })) ?? [],
+                  hidden: watchSendToGuap ?? false,
+                  errorMessage: guapErrorMessage,
+                },
+                sendToGuap: {
+                  text: "Send to guap?",
+                  disabled: watchType === TransactionType.INCOMING,
+                },
+                amount: {
+                  placeholder: "5,000",
+                  label: "Amount",
+                  max: 1_000_000_000_000,
+                  errorMessage: amountErrorMessage,
+                },
+                description: {
+                  placeholder: "Groceries",
+                  label: "Description",
+                  type: "textarea",
+                },
+                date: {
+                  label: "Date",
+                },
+              }}
+              defaultValues={defaultValues}
+              renderAfter={() => (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    isLoading={createTransaction.isLoading}
+                    type="submit"
+                    onClick={() => {
+                      setGuapIdErrors();
+                    }}
+                  >
+                    {createTransaction.isLoading ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+            />
+          </DialogContent>
         </Dialog>
       </div>
 

@@ -1,42 +1,49 @@
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { CheckIcon } from "@radix-ui/react-icons";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { useTsController } from "@ts-react/form";
-import cx from "classnames";
+import { Check } from "lucide-react";
 import React from "react";
+import { cn } from "../../lib/utils";
 
-interface CheckboxProps {
+interface CheckboxProps
+  extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
   text: string;
-  disabled?: boolean;
 }
 
-export const Checkbox = ({ text, disabled }: CheckboxProps) => {
+export const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  CheckboxProps
+>(({ className, text, ...props }, ref) => {
   const { field } = useTsController<boolean>();
 
   return (
     <fieldset className="flex items-center justify-end">
       <CheckboxPrimitive.Root
-        id={field.value?.toString()}
+        id={field.name}
+        ref={ref}
         checked={field.value}
         onCheckedChange={(val) => field.onChange(val as boolean)}
-        className={cx(
-          "flex h-5 w-5 items-center justify-center rounded",
-          "radix-state-checked:bg-purple-600 radix-state-unchecked:bg-gray-100 dark:radix-state-unchecked:bg-gray-900",
-          "focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75"
+        className={cn(
+          "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+          className
         )}
-        disabled={disabled}
+        {...props}
       >
-        <CheckboxPrimitive.Indicator>
-          <CheckIcon className="h-4 w-4 self-center text-white" />
+        <CheckboxPrimitive.Indicator
+          className={cn("flex items-center justify-center text-current")}
+        >
+          <Check className="h-4 w-4" />
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
 
       <LabelPrimitive.Label
-        htmlFor="c1"
-        className="ml-3 select-none text-sm font-medium text-gray-900 dark:text-gray-100"
+        htmlFor={field.name}
+        className="ml-3 cursor-pointer select-none text-sm font-medium text-gray-900 dark:text-gray-100"
       >
         {text}
       </LabelPrimitive.Label>
     </fieldset>
   );
-};
+});
+
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;

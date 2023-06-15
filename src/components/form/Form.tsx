@@ -1,4 +1,3 @@
-import { ExternalGuapType, TransactionType } from "@prisma/client";
 import { createTsForm, createUniqueFieldSchema } from "@ts-react/form";
 import { z } from "zod";
 import { Checkbox } from "./Checkbox";
@@ -6,6 +5,8 @@ import { DateInput } from "./DateInput";
 import { NumberInput } from "./NumberInput";
 import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
+import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { TransactionType } from "../../server/db/schema/transactions";
 
 export const externalGuapTypeSchema = createUniqueFieldSchema(
   z.enum([ExternalGuapType.BILLER, ExternalGuapType.PEER]),
@@ -34,7 +35,7 @@ export const transactionTypeSchema = createUniqueFieldSchema(
 );
 
 export const entitySelectSchema = createUniqueFieldSchema(
-  z.string().cuid().optional(),
+  z.string().uuid().optional(),
   "entitySelectSchema"
 );
 

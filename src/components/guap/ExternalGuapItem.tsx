@@ -1,4 +1,3 @@
-import { ExternalGuapType, type ExternalGuap } from "@prisma/client";
 import { useState } from "react";
 import { externalGuapSchema, Form } from "../form/Form";
 import { trpc } from "../../utils/trpc";
@@ -25,6 +24,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/AlertDialog";
+import {
+  type ExternalGuap,
+  ExternalGuapType,
+} from "../../server/db/schema/guaps";
 
 interface ExternalGuapItemProps {
   externalGuap: ExternalGuap;

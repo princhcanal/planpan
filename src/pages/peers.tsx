@@ -1,4 +1,3 @@
-import { ExternalGuapType } from "@prisma/client";
 import { type NextPage } from "next";
 import { useEffect, useState } from "react";
 import { externalGuapSchema, Form } from "../components/form/Form";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/Dialog";
+import { ExternalGuapType } from "../server/db/schema/guaps";
 
 const Peers: NextPage = () => {
   const utils = trpc.useContext();

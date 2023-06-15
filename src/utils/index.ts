@@ -1,4 +1,7 @@
-import type { LabelValuePair } from "../components/form/Select";
+interface LabelValuePair<T> {
+  label: string;
+  value: T;
+}
 
 export const mapEnumToLabelValuePair = (obj: any): LabelValuePair<any>[] => {
   return Object.entries<unknown>(obj).map((entry) => ({

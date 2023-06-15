@@ -1,5 +1,4 @@
-import { type Guap } from "@prisma/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Form } from "../form/Form";
 import { trpc } from "../../utils/trpc";
 import { externalGuap, guap as guapSchema, withId } from "../../types/zod";
@@ -26,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/AlertDialog";
+import { type Guap } from "../../server/db/schema/guaps";
 
 interface GuapItemProps {
   guap: Guap;
@@ -92,7 +92,7 @@ export const GuapItem: React.FC<GuapItemProps> = ({ guap }) => {
                 defaultValues={{
                   name: guap.name,
                   description: guap.description ?? undefined,
-                  balance: guap.balance,
+                  balance: guap.balance ?? undefined,
                   id: guap.id,
                 }}
                 renderAfter={() => (

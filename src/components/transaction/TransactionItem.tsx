@@ -1,9 +1,3 @@
-import {
-  type ExternalGuap,
-  type Guap,
-  type Transaction,
-  TransactionType,
-} from "@prisma/client";
 import { useState } from "react";
 import { trpc } from "../../utils/trpc";
 import numeral from "numeral";
@@ -20,18 +14,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/AlertDialog";
+import { type Guap, type ExternalGuap } from "../../server/db/schema/guaps";
+import {
+  type Transaction,
+  TransactionType,
+} from "../../server/db/schema/transactions";
 
 interface TransactionItemProps {
-  transaction: Transaction & {
-    guap: Guap | null;
-    externalGuap: ExternalGuap | null;
-    internalGuap: Guap | null;
-  };
+  transaction: Transaction;
+  guap: Guap;
+  internalGuap: Guap | null;
+  externalGuap: ExternalGuap | null;
   guapId: string;
 }
 
 export const TransactionItem: React.FC<TransactionItemProps> = ({
   transaction,
+  guap,
+  internalGuap,
+  externalGuap,
   guapId,
 }) => {
   const utils = trpc.useContext();
@@ -40,8 +41,16 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     onSuccess: () => {
       utils.guap.getOne.invalidate({ id: transaction.guapId as string });
       utils.transaction.getTransactionsByGuap.invalidate({
-        id: transaction.guapId as string,
+        id: transaction.guapId,
       });
+      if (transaction.internalGuapId) {
+        utils.guap.getOne.invalidate({
+          id: transaction.internalGuapId,
+        });
+        utils.transaction.getTransactionsByGuap.invalidate({
+          id: transaction.internalGuapId,
+        });
+      }
       setIsDeleteDialogOpen(false);
     },
   });
@@ -65,12 +74,10 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       {isOutgoingTransaction && (
         <p>
           <span>Sent To: </span>
-          {transaction.externalGuap && (
-            <span>{transaction.externalGuap.name}</span>
-          )}
-          {transaction.internalGuap && (
+          {externalGuap && <span>{externalGuap.name}</span>}
+          {internalGuap && (
             <Link href={`/guaps/${transaction.internalGuapId}`}>
-              {transaction.internalGuap.name}
+              {internalGuap.name}
             </Link>
           )}
         </p>
@@ -78,16 +85,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       {!isOutgoingTransaction && (
         <p>
           <span>Sent From: </span>
-          {transaction.type === TransactionType.OUTGOING &&
-            transaction.guap && (
-              <Link href={`/guaps/${transaction.guapId}`}>
-                {transaction.guap.name}
-              </Link>
-            )}
-          {transaction.type === TransactionType.INCOMING &&
-            transaction.externalGuap && (
-              <span>{transaction.externalGuap.name}</span>
-            )}
+          {transaction.type === TransactionType.OUTGOING && guap && (
+            <Link href={`/guaps/${transaction.guapId}`}>{guap.name}</Link>
+          )}
+          {transaction.type === TransactionType.INCOMING && externalGuap && (
+            <span>{externalGuap.name}</span>
+          )}
         </p>
       )}
 
@@ -118,6 +121,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                   description: transaction.description ?? undefined,
                   internalGuapId: transaction.internalGuapId ?? undefined,
                   externalGuapId: transaction.externalGuapId ?? undefined,
+                  type: transaction.type as TransactionType,
                 })
               }
               isLoading={deleteTransaction.isLoading}

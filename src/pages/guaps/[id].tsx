@@ -1,4 +1,3 @@
-import { TransactionType } from "@prisma/client";
 import { type NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -22,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/Dialog";
+import { TransactionType } from "../../server/db/schema/transactions";
 
 const GuapDetails: NextPage = () => {
   const {
@@ -235,17 +235,17 @@ const GuapDetails: NextPage = () => {
           </DialogContent>
         </Dialog>
       </div>
-
       <h2 className="mb-4 text-2xl font-semibold text-indigo-500">
-        Balance: &#8369; {numeral(guap.data?.balance).format("0,0.00")}
+        &#8369; {numeral(guap.data?.balance).format("0,0.00")}
       </h2>
-
       <h2 className="mb-4 text-2xl font-semibold">Transaction History</h2>
-
       {transactions.data?.map((transaction) => (
         <TransactionItem
-          transaction={transaction}
-          key={transaction.id}
+          transaction={transaction.transactions}
+          guap={transaction.guaps}
+          internalGuap={transaction.internalGuap}
+          externalGuap={transaction.externalGuap}
+          key={transaction.transactions.id}
           guapId={id as string}
         />
       ))}

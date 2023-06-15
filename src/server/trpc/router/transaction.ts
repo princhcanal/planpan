@@ -1,4 +1,3 @@
-import { type PrismaClient, TransactionType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { type z } from "zod";
 import {
@@ -9,29 +8,52 @@ import {
   withId,
 } from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
+import { TransactionType, transactions } from "../../db/schema/transactions";
+import {
+  guaps,
+  transactionsExternalGuap,
+  transactionsGuap,
+  transactionsInternalGuap,
+} from "../../db/schema/guaps";
+import { and, desc, eq, or } from "drizzle-orm";
+import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export const transactionRouter = router({
   getAllTransactions: protectedProcedure.query(({ ctx }) => {
-    return ctx.prisma.transaction.findMany({
-      where: { guap: { userId: ctx.session.user.id } },
-    });
+    return ctx.db
+      .select()
+      .from(transactions)
+      .innerJoin(guaps, eq(transactions.guapId, guaps.id))
+      .where(eq(guaps.userId, ctx.session.user.id));
   }),
   getTransactionsByGuap: protectedProcedure
     .input(withId)
-    .query(({ ctx, input }) => {
-      return ctx.prisma.transaction.findMany({
-        where: {
-          OR: [
-            { guapId: input.id, guap: { userId: ctx.session.user.id } },
-            {
-              internalGuapId: input.id,
-              internalGuap: { userId: ctx.session.user.id },
-            },
-          ],
-        },
-        include: { guap: true, externalGuap: true, internalGuap: true },
-        orderBy: { date: "desc" },
-      });
+    .query(async ({ ctx, input }) => {
+      return ctx.db
+        .select()
+        .from(transactions)
+        .where(
+          or(
+            and(
+              eq(transactions.guapId, input.id),
+              eq(guaps.userId, ctx.session.user.id)
+            ),
+            and(
+              eq(transactionsInternalGuap.id, input.id),
+              eq(transactionsInternalGuap.userId, ctx.session.user.id)
+            )
+          )
+        )
+        .innerJoin(guaps, eq(guaps.id, transactions.guapId))
+        .leftJoin(
+          transactionsInternalGuap,
+          eq(transactionsInternalGuap.id, transactions.internalGuapId)
+        )
+        .leftJoin(
+          transactionsExternalGuap,
+          eq(transactionsExternalGuap.id, transactions.externalGuapId)
+        )
+        .orderBy(desc(transactions.date));
     }),
   createTransaction: protectedProcedure
     .input(transaction.refine(transactionRefine, transactionRefineMessage))
@@ -40,10 +62,11 @@ export const transactionRouter = router({
 
       delete input.sendToGuap;
 
-      await doTransaction(ctx.prisma, ctx.session.user.id, input);
+      await doTransaction(ctx.db, ctx.session.user.id, input);
 
-      return ctx.prisma.transaction.create({
-        data: { ...input, date: input.date ?? new Date().toISOString() },
+      return ctx.db.insert(transactions).values({
+        ...input,
+        date: input.date ? new Date(input.date) : new Date(),
       });
     }),
   editTransaction: protectedProcedure
@@ -56,13 +79,18 @@ export const transactionRouter = router({
       delete input.sendToGuap;
 
       // reset balances then edit transaction
-      await resetBalances(ctx.prisma, ctx.session.user.id, input);
-      await doTransaction(ctx.prisma, ctx.session.user.id, input);
+      await resetBalances(ctx.db, ctx.session.user.id, input);
+      await doTransaction(ctx.db, ctx.session.user.id, input);
 
-      return ctx.prisma.transaction.updateMany({
-        where: { id: input.id, guap: { userId: ctx.session.user.id } },
-        data: { ...input, date: input.date ?? new Date().toISOString() },
-      });
+      return ctx.db
+        .update(transactions)
+        .set({ ...input, date: new Date(input.date) ?? new Date() })
+        .where(
+          and(
+            eq(transactions.id, input.id),
+            eq(transactionsGuap.userId, ctx.session.user.id)
+          )
+        );
     }),
   deleteTransaction: protectedProcedure
     .input(
@@ -70,11 +98,9 @@ export const transactionRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // reset balances then delete transaction
-      await resetBalances(ctx.prisma, ctx.session.user.id, input);
+      await resetBalances(ctx.db, ctx.session.user.id, input);
 
-      return ctx.prisma.transaction.delete({
-        where: { id: input.id },
-      });
+      return ctx.db.delete(transactions).where(eq(transactions.id, input.id));
     }),
 });
 
@@ -95,16 +121,31 @@ const preValidate = (input: z.infer<typeof transaction>) => {
 };
 
 const resetBalances = async (
-  prisma: PrismaClient,
+  db: PostgresJsDatabase,
   userId: string,
   input: z.infer<typeof transactionWithId>
 ) => {
-  const transaction = await prisma.transaction.findUniqueOrThrow({
-    where: { id: input.id },
-  });
-  const guap = await prisma.guap.findFirstOrThrow({
-    where: { id: input.guapId, userId },
-  });
+  const transaction = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, input.id))
+    .then((res) => res[0]);
+  if (!transaction) {
+    throw new TRPCError({
+      message: "Transaction not found",
+      code: "NOT_FOUND",
+    });
+  }
+
+  const guap = await db
+    .select()
+    .from(guaps)
+    .where(and(eq(guaps.id, input.guapId), eq(guaps.userId, userId)))
+    .then((res) => res[0]);
+  if (!guap) {
+    throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+  }
+
   let newBalance;
 
   if (input.type === TransactionType.INCOMING) {
@@ -113,33 +154,45 @@ const resetBalances = async (
     newBalance = guap.balance + transaction.amount;
 
     if (input.internalGuapId) {
-      const ownGuap = await prisma.guap.findFirstOrThrow({
-        where: { id: input.internalGuapId },
-      });
+      const ownGuap = await db
+        .select()
+        .from(guaps)
+        .where(eq(guaps.id, input.internalGuapId))
+        .then((res) => res[0]);
+
+      if (!ownGuap) {
+        throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+      }
 
       const ownGuapNewBalance = ownGuap.balance - transaction.amount;
 
-      await prisma.guap.update({
-        where: { id: ownGuap.id },
-        data: { balance: ownGuapNewBalance },
-      });
+      await db
+        .update(guaps)
+        .set({ balance: ownGuapNewBalance })
+        .where(eq(guaps.id, ownGuap.id));
     }
   }
 
-  await prisma.guap.update({
-    where: { id: input.guapId },
-    data: { balance: newBalance },
-  });
+  await db
+    .update(guaps)
+    .set({ balance: newBalance })
+    .where(eq(guaps.id, input.guapId));
 };
 
 const doTransaction = async (
-  prisma: PrismaClient,
+  db: PostgresJsDatabase,
   userId: string,
   input: z.infer<typeof transaction>
 ) => {
-  const guap = await prisma.guap.findFirstOrThrow({
-    where: { id: input.guapId, userId },
-  });
+  const guap = await db
+    .select()
+    .from(guaps)
+    .where(and(eq(guaps.id, input.guapId), eq(guaps.userId, userId)))
+    .then((res) => res[0]);
+
+  if (!guap) {
+    throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+  }
 
   if (input.amount > guap.balance && input.type === TransactionType.OUTGOING) {
     throw new TRPCError({ message: "Not enough balance", code: "BAD_REQUEST" });
@@ -153,21 +206,27 @@ const doTransaction = async (
     newBalance = guap.balance - input.amount;
 
     if (input.internalGuapId) {
-      const ownGuap = await prisma.guap.findFirstOrThrow({
-        where: { id: input.internalGuapId },
-      });
+      const ownGuap = await db
+        .select()
+        .from(guaps)
+        .where(eq(guaps.id, input.internalGuapId))
+        .then((res) => res[0]);
+
+      if (!ownGuap) {
+        throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+      }
 
       const ownGuapNewBalance = ownGuap.balance + input.amount;
 
-      await prisma.guap.update({
-        where: { id: ownGuap.id },
-        data: { balance: ownGuapNewBalance },
-      });
+      await db
+        .update(guaps)
+        .set({ balance: ownGuapNewBalance })
+        .where(eq(guaps.id, ownGuap.id));
     }
   }
 
-  await prisma.guap.update({
-    where: { id: input.guapId },
-    data: { balance: newBalance },
-  });
+  await db
+    .update(guaps)
+    .set({ balance: newBalance })
+    .where(eq(guaps.id, input.guapId));
 };

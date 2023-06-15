@@ -21,7 +21,7 @@ if (process.env.DATABASE_URL) {
       );
       console.log(e);
     }
+
+    process.exit();
   })();
 }
-
-process.exit();

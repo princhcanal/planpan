@@ -12,18 +12,23 @@ import {
   verificationTokens,
 } from "../../../server/db/schema/auth";
 import { and, eq } from "drizzle-orm";
+import { addSeedData } from "../../../server/db/seed";
 
 const DrizzleAdapter = (client: PostgresJsDatabase): Adapter => {
   return {
     createUser: async (data) => {
-      return (
-        client
-          .insert(users)
-          .values({ ...data, id: crypto.randomUUID() })
-          .returning()
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .then((res) => res[0]!)
-      );
+      const newUser = await client
+        .insert(users)
+        .values({ ...data, id: crypto.randomUUID() })
+        .returning()
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .then((res) => res[0]!);
+
+      if (env.NODE_ENV === "development") {
+        addSeedData(newUser.id);
+      }
+
+      return newUser;
     },
     getUser: async (data) => {
       return client

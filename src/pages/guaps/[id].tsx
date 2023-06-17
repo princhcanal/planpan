@@ -137,12 +137,6 @@ const GuapDetails: NextPage = () => {
     setAmountErrorMessage("");
   };
 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -155,8 +149,8 @@ const GuapDetails: NextPage = () => {
             resetErrorMessages();
           }}
         >
-          <DialogTrigger>
-            {mounted && <Button>Create Transaction</Button>}
+          <DialogTrigger asChild>
+            <Button>Create Transaction</Button>
           </DialogTrigger>
 
           <DialogContent>

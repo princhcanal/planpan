@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/Button";
 import { guap } from "../../types/zod";
 import { trpc } from "../../utils/trpc";
 import { type z } from "zod";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,19 +29,15 @@ const Guaps: NextPage = () => {
     createGuap.mutate(data);
   };
 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-3xl font-bold">Guaps</h2>
 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger>{mounted && <Button>Create</Button>}</DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>Create</Button>
+          </DialogTrigger>
 
           <DialogContent>
             <DialogHeader>

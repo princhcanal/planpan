@@ -34,7 +34,7 @@
     "date-fns": "^2.30.0",
     "drizzle-orm": "^0.26.5",
     "lucide-react": "^0.241.0",
-    "next": "^13.4.4",
+    "next": "^13.4.6",
     "next-auth": "^4.22.1",
     "numeral": "^2.0.6",
     "postgres": "^3.3.5",

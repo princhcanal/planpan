@@ -1,12 +1,16 @@
 import { type AppProps, type AppType } from "next/app";
 import { type Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
 
 import "../styles/globals.css";
 import { type NextPage } from "next";
-import { type ReactElement, type ReactNode } from "react";
+import {
+  type PropsWithChildren,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { Layout } from "../components/layout/Layout";
 
 export type AppPropsWithLayout = AppProps & {
@@ -18,6 +22,7 @@ export type NextPageWithLayout<P = AppPropsWithLayout, IP = P> = NextPage<
   IP
 > & {
   getLayout?: (page: ReactElement) => ReactNode;
+  public?: boolean;
 };
 
 const MyApp: AppType<{ session: Session | null }> = ({
@@ -25,12 +30,25 @@ const MyApp: AppType<{ session: Session | null }> = ({
   pageProps: { session, ...pageProps },
 }: AppPropsWithLayout) => {
   const getLayout = Component.getLayout ?? Layout;
+  const component = getLayout(<Component {...pageProps} />);
 
   return (
     <SessionProvider session={session}>
-      {getLayout(<Component {...pageProps} />)}
+      {Component.public ? component : <Auth>{component}</Auth>}
     </SessionProvider>
   );
+};
+
+const Auth = ({ children }: PropsWithChildren) => {
+  const { status } = useSession({
+    required: true,
+  });
+
+  if (status === "loading") {
+    return <></>;
+  }
+
+  return <>{children}</>;
 };
 
 export default trpc.withTRPC(MyApp);

@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Layout } from "../components/layout/Layout";
+import { Toaster } from "../components/ui/Toaster";
 
 export type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
@@ -35,6 +36,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
   return (
     <SessionProvider session={session}>
       {Component.public ? component : <Auth>{component}</Auth>}
+      <Toaster />
     </SessionProvider>
   );
 };

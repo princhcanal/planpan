@@ -10,6 +10,7 @@ export interface NumberInputProps
   min?: number;
   label?: string;
   errorMessage?: string;
+  currency?: string;
 }
 
 export const NumberInput = ({
@@ -19,6 +20,7 @@ export const NumberInput = ({
   max,
   min,
   errorMessage,
+  currency,
 }: NumberInputProps) => {
   const { field, error } = useTsController<number>();
 
@@ -33,38 +35,41 @@ export const NumberInput = ({
         </Label>
       </div>
 
-      <NumericFormat
-        id={field.name}
-        value={field.value ? field.value : ""}
-        onChange={(e) => {
-          field.onChange(numeral(e.target.value).value() ?? undefined);
-        }}
-        isAllowed={(values) => {
-          const { floatValue } = values;
+      <div className="flex items-center gap-2">
+        {currency && <span className="text-2xl font-semibold">{currency}</span>}
+        <NumericFormat
+          id={field.name}
+          value={field.value ? field.value : ""}
+          onChange={(e) => {
+            field.onChange(numeral(e.target.value).value() ?? undefined);
+          }}
+          isAllowed={(values) => {
+            const { floatValue } = values;
 
-          if (floatValue === undefined) {
-            return true;
-          }
+            if (floatValue === undefined) {
+              return true;
+            }
 
-          let isMaxValid = true;
-          let isMinValid = true;
+            let isMaxValid = true;
+            let isMinValid = true;
 
-          if (max !== undefined && floatValue > max) {
-            isMaxValid = false;
-          }
+            if (max !== undefined && floatValue > max) {
+              isMaxValid = false;
+            }
 
-          if (min !== undefined && floatValue < min) {
-            isMinValid = false;
-          }
+            if (min !== undefined && floatValue < min) {
+              isMinValid = false;
+            }
 
-          return isMaxValid && isMinValid;
-        }}
-        thousandSeparator
-        allowNegative={false}
-        placeholder={placeholder}
-        decimalScale={2}
-        className={inputClasses(className)}
-      />
+            return isMaxValid && isMinValid;
+          }}
+          thousandSeparator
+          allowNegative={false}
+          placeholder={placeholder}
+          decimalScale={2}
+          className={inputClasses(className)}
+        />
+      </div>
 
       {error?.errorMessage && (
         <span className="text-xs text-red-500">{error.errorMessage}</span>

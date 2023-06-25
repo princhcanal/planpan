@@ -21,7 +21,10 @@ const defaultToastConfig: Toast = {
 
 const handleGlobalError = (error: unknown) => {
   if (error instanceof TRPCClientError) {
-    toast(defaultToastConfig);
+    toast({
+      ...defaultToastConfig,
+      description: JSON.parse(error.message)[0].message ?? error.message,
+    });
   }
 };
 

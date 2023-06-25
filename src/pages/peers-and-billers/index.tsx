@@ -1,11 +1,7 @@
-import { type NextPage } from "next";
-import { Form } from "../../components/form/Form";
-import { GuapItem } from "../../components/guap/GuapItem";
-import { Button } from "../../components/ui/Button";
-import { guap } from "../../types/zod";
+import type { NextPage } from "next";
 import { trpc } from "../../utils/trpc";
-import { type z } from "zod";
-import { useState } from "react";
+import { Spinner } from "../../components/ui/Spinner";
+import { ExternalGuapTable } from "../../components/guap/ExternalGuapTable";
 import {
   Dialog,
   DialogContent,
@@ -14,29 +10,37 @@ import {
   DialogTrigger,
 } from "../../components/ui/Dialog";
 import { Plus } from "lucide-react";
-import { Spinner } from "../../components/ui/Spinner";
-import { GuapSkeleton } from "../../components/guap/GuapSkeleton";
+import { Form, externalGuapSchema } from "../../components/form/Form";
+import { Button } from "../../components/ui/Button";
+import { useState } from "react";
+import type { z } from "zod";
+import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { mapEnumToLabelValuePair } from "../../utils";
 
-const Guaps: NextPage = () => {
+const PeersAndBillers: NextPage = () => {
   const utils = trpc.useContext();
-  const { data, isLoading, isFetching } = trpc.guap.getAll.useQuery();
-  const createGuap = trpc.guap.create.useMutation({
+  const { data, isLoading, isFetching } = trpc.externalGuap.getAll.useQuery();
+  const [isOpen, setIsOpen] = useState(false);
+  const createPeerBiller = trpc.externalGuap.create.useMutation({
     onSuccess: () => {
-      utils.guap.getAll.invalidate();
+      utils.externalGuap.getAll.invalidate();
       setIsOpen(false);
     },
   });
-  const [isOpen, setIsOpen] = useState(false);
 
-  const onSubmit = (data: z.infer<typeof guap>) => {
-    createGuap.mutate(data);
+  const onSubmit = (data: z.infer<typeof externalGuapSchema>) => {
+    createPeerBiller.mutate({ ...data, type: data.type as ExternalGuapType });
+  };
+
+  const defaultValues = {
+    type: ExternalGuapType.PEER,
   };
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-3xl font-bold">Guaps</h2>
+          <h2 className="text-3xl font-bold">Peers & Billers</h2>
           {isFetching && !isLoading && <Spinner />}
         </div>
 
@@ -51,7 +55,7 @@ const Guaps: NextPage = () => {
             </DialogHeader>
 
             <Form
-              schema={guap}
+              schema={externalGuapSchema}
               onSubmit={onSubmit}
               props={{
                 name: {
@@ -63,39 +67,29 @@ const Guaps: NextPage = () => {
                   label: "Description",
                   type: "textarea",
                 },
-                balance: {
-                  placeholder: "5,000",
-                  label: "Balance",
-                  max: 1_000_000_000_000,
-                  currency: "₱",
+                type: {
+                  options: mapEnumToLabelValuePair(ExternalGuapType),
+                  label: "Type",
                 },
               }}
               renderAfter={() => (
                 <Button
                   className="mt-4 w-full"
-                  isLoading={createGuap.isLoading}
+                  isLoading={createPeerBiller.isLoading}
                   type="submit"
                 >
-                  {createGuap.isLoading ? "Saving..." : "Save"}
+                  Save
                 </Button>
               )}
+              defaultValues={defaultValues}
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        {data?.map((guap) => {
-          return <GuapItem key={guap.id} guap={guap} />;
-        })}
-
-        {isLoading &&
-          Array(6)
-            .fill(0)
-            .map((_, i) => <GuapSkeleton key={i} />)}
-      </div>
+      {data && <ExternalGuapTable externalGuaps={data} />}
     </div>
   );
 };
 
-export default Guaps;
+export default PeersAndBillers;

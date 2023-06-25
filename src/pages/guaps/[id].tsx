@@ -8,7 +8,6 @@ import { trpc } from "../../utils/trpc";
 import numeral from "numeral";
 import { mapEnumToLabelValuePair } from "../../utils";
 import { useForm } from "react-hook-form";
-import { TransactionItem } from "../../components/transaction/TransactionItem";
 import {
   transaction,
   transactionRefine,
@@ -22,6 +21,11 @@ import {
   DialogTrigger,
 } from "../../components/ui/Dialog";
 import { TransactionType } from "../../server/db/schema/transactions";
+import { TransactionTable } from "../../components/transaction/TransactionTable";
+import { type LabelValuePair } from "../../components/form/SelectInput";
+import { ArrowLeftRight } from "lucide-react";
+import { GuapActions } from "../../components/guap/GuapActions";
+import { Spinner } from "../../components/ui/Spinner";
 
 const GuapDetails: NextPage = () => {
   const {
@@ -35,12 +39,13 @@ const GuapDetails: NextPage = () => {
     { id: id as string },
     { enabled: !!id }
   );
-  const transactions = trpc.transaction.getTransactionsByGuap.useQuery(
-    {
-      id: id as string,
-    },
-    { enabled: !!id }
-  );
+  const { data: transactionsData, isFetching: transactionsFetching } =
+    trpc.transaction.getTransactionsByGuap.useQuery(
+      {
+        id: id as string,
+      },
+      { enabled: !!id }
+    );
   const createTransaction = trpc.transaction.createTransaction.useMutation({
     onSuccess: () => {
       utils.guap.getOne.invalidate({ id: id as string });
@@ -104,7 +109,7 @@ const GuapDetails: NextPage = () => {
   }, [watchSendToGuap, form]);
 
   useEffect(() => {
-    if (guap.data?.balance) {
+    if (guap.data?.balance !== null && guap.data?.balance !== undefined) {
       if (
         watchAmount > guap.data.balance &&
         watchType === TransactionType.OUTGOING
@@ -137,113 +142,148 @@ const GuapDetails: NextPage = () => {
     setAmountErrorMessage("");
   };
 
-  return (
+  const guapFilterOptions: LabelValuePair[] =
+    guaps.data?.map((g) => ({
+      label: g.name,
+      value: g.id,
+    })) ?? [];
+  const externalGuapFilterOptions: LabelValuePair[] =
+    externalGuaps.data?.map((g) => ({
+      label: g.name,
+      value: g.id,
+    })) ?? [];
+
+  return guap.data ? (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-3xl font-bold">{guap.data?.name}</h2>
-        <Dialog
-          open={isCreateDialogOpen}
-          onOpenChange={(open) => {
-            setIsCreateDialogOpen(open);
-            form.reset(defaultValues);
-            resetErrorMessages();
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>Create Transaction</Button>
-          </DialogTrigger>
+      <div className="mb-12 flex justify-between gap-8">
+        <div>
+          <p className="text-sm text-muted-foreground">Balance</p>
+          <h1 className="mb-2 text-4xl font-extrabold text-highlight">
+            &#8369; <span>{numeral(guap.data.balance).format("0,0")}</span>
+            <span className="text-lg">
+              {numeral(guap.data.balance).format(".00")}
+            </span>
+          </h1>
+          <h2 className="text-xl font-semibold">{guap.data.name}</h2>
+          <p className="whitespace-pre-line text-muted-foreground">
+            {guap.data.description}
+          </p>
+        </div>
 
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Transaction</DialogTitle>
-            </DialogHeader>
+        <div className="flex gap-2">
+          <GuapActions guap={guap.data} />
+        </div>
+      </div>
 
-            <Form
-              form={form}
-              schema={transactionSchema}
-              onSubmit={onSubmit}
-              props={{
-                guapId: {
-                  type: "hidden",
-                },
-                type: {
-                  options: mapEnumToLabelValuePair(TransactionType),
-                  label: "Type",
-                },
-                internalGuapId: {
-                  label: "Send To",
-                  placeholder: "Choose Guap",
-                  options:
-                    guapsExcludingSelf?.map((guap) => ({
-                      label: guap.name,
-                      value: guap.id,
-                    })) ?? [],
-                  hidden: !watchSendToGuap,
-                  errorMessage: guapErrorMessage,
-                },
-                externalGuapId: {
-                  label: "Send To",
-                  placeholder: "Choose Peer/Biller",
-                  options:
-                    externalGuaps.data?.map((guap) => ({
-                      label: guap.name,
-                      value: guap.id,
-                    })) ?? [],
-                  hidden: watchSendToGuap ?? false,
-                  errorMessage: guapErrorMessage,
-                },
-                sendToGuap: {
-                  text: "Send to guap?",
-                  disabled: watchType === TransactionType.INCOMING,
-                },
-                amount: {
-                  placeholder: "5,000",
-                  label: "Amount",
-                  max: 1_000_000_000_000,
-                  errorMessage: amountErrorMessage,
-                },
-                description: {
-                  placeholder: "Groceries",
-                  label: "Description",
-                  type: "textarea",
-                },
-                date: {
-                  label: "Date",
-                },
-              }}
-              defaultValues={defaultValues}
-              renderAfter={() => (
-                <div className="mt-4 flex justify-end">
+      <div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg text-muted-foreground">
+              Transaction History
+            </h3>
+            {transactionsFetching && <Spinner />}
+          </div>
+
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              form.reset(defaultValues);
+              resetErrorMessages();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm" icon={ArrowLeftRight}>
+                Create Transaction
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Transaction</DialogTitle>
+              </DialogHeader>
+
+              <Form
+                form={form}
+                schema={transactionSchema}
+                onSubmit={onSubmit}
+                props={{
+                  guapId: {
+                    type: "hidden",
+                  },
+                  type: {
+                    options: mapEnumToLabelValuePair(TransactionType),
+                    label: "Type",
+                  },
+                  internalGuapId: {
+                    label: "Send To",
+                    placeholder: "Choose Guap",
+                    options:
+                      guapsExcludingSelf?.map((guap) => ({
+                        label: guap.name,
+                        value: guap.id,
+                      })) ?? [],
+                    hidden: !watchSendToGuap,
+                    errorMessage: guapErrorMessage,
+                  },
+                  externalGuapId: {
+                    label: "Send To",
+                    placeholder: "Choose Peer/Biller",
+                    options:
+                      externalGuaps.data?.map((guap) => ({
+                        label: guap.name,
+                        value: guap.id,
+                      })) ?? [],
+                    hidden: watchSendToGuap ?? false,
+                    errorMessage: guapErrorMessage,
+                  },
+                  sendToGuap: {
+                    text: "Send to guap?",
+                    disabled: watchType === TransactionType.INCOMING,
+                  },
+                  amount: {
+                    placeholder: "5,000",
+                    label: "Amount",
+                    max: 1_000_000_000_000,
+                    errorMessage: amountErrorMessage,
+                    currency: "₱",
+                  },
+                  description: {
+                    placeholder: "Groceries",
+                    label: "Description",
+                    type: "textarea",
+                  },
+                  date: {
+                    label: "Date",
+                  },
+                }}
+                defaultValues={defaultValues}
+                renderAfter={() => (
                   <Button
+                    className="mt-4 w-full"
                     isLoading={createTransaction.isLoading}
                     type="submit"
                     onClick={() => {
                       setGuapIdErrors();
                     }}
                   >
-                    {createTransaction.isLoading ? "Saving..." : "Save"}
+                    Save
                   </Button>
-                </div>
-              )}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <h2 className="mb-4 text-2xl font-semibold text-indigo-500">
-        &#8369; {numeral(guap.data?.balance).format("0,0.00")}
-      </h2>
-      <h2 className="mb-4 text-2xl font-semibold">Transaction History</h2>
-      {transactions.data?.map((transaction) => (
-        <TransactionItem
-          transaction={transaction.transactions}
-          guap={transaction.guaps}
-          internalGuap={transaction.internalGuap}
-          externalGuap={transaction.externalGuap}
-          key={transaction.transactions.id}
+                )}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <TransactionTable
+          transactions={transactionsData ?? []}
           guapId={id as string}
+          guaps={guapFilterOptions.concat(externalGuapFilterOptions)}
         />
-      ))}
+      </div>
     </div>
+  ) : (
+    <></>
   );
 };
 

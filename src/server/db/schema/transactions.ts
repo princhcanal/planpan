@@ -10,6 +10,7 @@ import {
 import { guaps, externalGuaps } from "./guaps";
 import { attachments } from "./attachments";
 
+// TODO: rename to DEBIT/CREDIT or DEPOSIT/EXPENSE
 export const transactionTypeEnum = pgEnum("transaction_type", [
   "INCOMING",
   "OUTGOING",
@@ -24,7 +25,7 @@ export const transactions = pgTable("transactions", {
   id: uuid("id").notNull().defaultRandom().primaryKey(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  date: timestamp("date").defaultNow().notNull(),
+  date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
   amount: real("amount").notNull(),
   description: text("description"),
   guapId: uuid("guap_id")

@@ -1,14 +1,15 @@
 import { externalGuap, withId } from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
 import { ExternalGuapType, externalGuaps } from "../../db/schema/guaps";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 export const externalGuapRouter = router({
   getAll: protectedProcedure.query(({ ctx }) => {
     return ctx.db
       .select()
       .from(externalGuaps)
-      .where(eq(externalGuaps.userId, ctx.session.user.id));
+      .where(eq(externalGuaps.userId, ctx.session.user.id))
+      .orderBy(asc(externalGuaps.createdAt));
   }),
   getAllPeers: protectedProcedure.query(({ ctx }) => {
     return ctx.db

@@ -30,7 +30,25 @@ export const transactionRouter = router({
     .input(withId)
     .query(async ({ ctx, input }) => {
       return ctx.db
-        .select()
+        .select({
+          id: transactions.id,
+          date: transactions.date,
+          amount: transactions.amount,
+          description: transactions.description,
+          type: transactions.type,
+          guap: {
+            id: guaps.id,
+            name: guaps.name,
+          },
+          internalGuap: {
+            id: transactionsInternalGuap.id,
+            name: transactionsInternalGuap.name,
+          },
+          externalGuap: {
+            id: transactionsExternalGuap.id,
+            name: transactionsExternalGuap.name,
+          },
+        })
         .from(transactions)
         .where(
           or(
@@ -68,7 +86,7 @@ export const transactionRouter = router({
 
           await tx.insert(transactions).values({
             ...input,
-            date: input.date ? new Date(input.date) : new Date(),
+            date: input.date ?? new Date().toISOString(),
           });
         } catch (e) {
           tx.rollback();
@@ -93,7 +111,7 @@ export const transactionRouter = router({
 
           await tx
             .update(transactions)
-            .set({ ...input, date: new Date(input.date) ?? new Date() })
+            .set({ ...input, date: input.date ?? new Date().toISOString() })
             .where(
               and(
                 eq(transactions.id, input.id),
@@ -111,12 +129,22 @@ export const transactionRouter = router({
       transactionWithId.refine(transactionRefine, transactionRefineMessage)
     )
     .mutation(async ({ ctx, input }) => {
+      const sleep = (ms: number) => {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      };
+
+      await sleep(3000);
+
       await ctx.db.transaction(async (tx) => {
         try {
           // reset balances then delete transaction
           await resetBalances(tx, ctx.session.user.id, input);
 
-          await tx.delete(transactions).where(eq(transactions.id, input.id));
+          return tx
+            .delete(transactions)
+            .where(eq(transactions.id, input.id))
+            .returning()
+            .then((res) => res[0]);
         } catch (e) {
           tx.rollback();
           console.log(e);
@@ -251,4 +279,3 @@ const doTransaction = async (
     .set({ balance: newBalance })
     .where(eq(guaps.id, input.guapId));
 };
-

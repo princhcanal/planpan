@@ -1,14 +1,21 @@
 import { type ReactElement } from "react";
-import { Navbar } from "./Navbar";
+import { SideNav } from "./SideNav";
+import { BottomNav } from "./BottomNav";
 
 export const Layout = (page: ReactElement) => {
   return (
-    <div className="flex min-h-screen">
-      <Navbar />
+    <div className="relative flex h-screen max-h-screen overflow-hidden">
+      <div className="hidden xl:block">
+        <SideNav />
+      </div>
 
-      <main className="h-screen flex-grow overflow-y-auto bg-gray-100 px-6 pt-8 pb-24 text-gray-800">
+      <main className="mx-auto h-screen max-w-screen-2xl flex-grow overflow-y-auto px-6 pb-24 pt-14">
         {page}
       </main>
+
+      <div className="absolute bottom-0 left-0 w-full bg-background xl:hidden">
+        <BottomNav />
+      </div>
     </div>
   );
 };

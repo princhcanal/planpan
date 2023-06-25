@@ -20,6 +20,11 @@ export const externalGuap = z.object({
   type: z.nativeEnum(ExternalGuapType),
 });
 
+export const joinedGuap = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, "Required"),
+});
+
 export const transactionRefine = (data: z.infer<typeof transaction>) =>
   (!!data.internalGuapId && !data.externalGuapId) ||
   (!data.internalGuapId && !!data.externalGuapId);
@@ -38,3 +43,13 @@ export const transaction = z.object({
 });
 
 export const transactionWithId = transaction.merge(withId);
+
+export const transactionWithJoinedGuaps = z.object({
+  date: z.string().datetime(),
+  amount: z.number().positive(),
+  description: z.string().nullish(),
+  type: z.enum(["INCOMING", "OUTGOING"]),
+  guap: joinedGuap,
+  internalGuap: joinedGuap.nullish(),
+  externalGuap: joinedGuap.nullish(),
+});

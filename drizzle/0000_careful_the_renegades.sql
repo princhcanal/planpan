@@ -77,7 +77,40 @@ CREATE TABLE IF NOT EXISTS "guaps" (
 	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"balance" numeric,
+	"balance" real NOT NULL,
+	"image" text
+);
+
+CREATE TABLE IF NOT EXISTS "externalGuap" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"image" text,
+	"type" external_guap_type NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "guap" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"balance" real NOT NULL,
+	"image" text
+);
+
+CREATE TABLE IF NOT EXISTS "internalGuap" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"balance" real NOT NULL,
 	"image" text
 );
 
@@ -86,7 +119,7 @@ CREATE TABLE IF NOT EXISTS "transactions" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"date" timestamp DEFAULT now() NOT NULL,
-	"amount" numeric NOT NULL,
+	"amount" real NOT NULL,
 	"description" text,
 	"guap_id" uuid NOT NULL,
 	"internal_guap_id" uuid,
@@ -125,6 +158,24 @@ END $$;
 
 DO $$ BEGIN
  ALTER TABLE "guaps" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+ ALTER TABLE "externalGuap" ADD CONSTRAINT "external_guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+ ALTER TABLE "guap" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+ ALTER TABLE "internalGuap" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

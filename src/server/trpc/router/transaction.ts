@@ -15,7 +15,7 @@ import {
   transactionsWallet,
   transactionsInternalWallet,
 } from "../../db/schema/wallets";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export const transactionRouter = router({
@@ -35,7 +35,11 @@ export const transactionRouter = router({
           date: transactions.date,
           amount: transactions.amount,
           description: transactions.description,
-          type: transactions.type,
+          type: sql`CASE 
+                      WHEN "transactions"."type" = 'DEBIT' AND "wallets"."id" != ${input.id} THEN 'CREDIT'
+                      WHEN "transactions"."type" = 'DEBIT' AND "wallets"."id" = ${input.id} THEN 'DEBIT'
+                      ELSE 'CREDIT'
+                    END "type"`,
           wallet: {
             id: wallets.id,
             name: wallets.name,

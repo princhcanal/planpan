@@ -76,48 +76,52 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         <DataTableColumnHeader column={column} title="Sent To/From" />
       ),
       cell: ({ row }) => {
-        const isOutgoingTransaction =
-          walletId === row.original.wallet.id &&
-          row.original.type === TransactionType.DEBIT;
+        const isDebit = row.original.type === TransactionType.DEBIT;
 
-        if (isOutgoingTransaction) {
-          if (row.original.recipient) {
-            return <span>{row.original.recipient.name}</span>;
-          }
-          if (row.original.internalWallet) {
-            return (
-              <Link
-                href={`/wallets/${row.original.internalWallet.id}`}
-                className="underline"
-              >
-                {row.original.internalWallet.name}
-              </Link>
-            );
-          }
-        } else {
-          if (row.original.type === TransactionType.DEBIT) {
-            return (
-              <Link
-                href={`/wallets/${row.original.wallet.id}`}
-                className="underline"
-              >
-                {row.original.wallet.name}
-              </Link>
-            );
-          } else if (
-            row.original.type === TransactionType.CREDIT &&
-            row.original.recipient
-          ) {
-            return <span>{row.original.recipient.name}</span>;
-          }
+        if (row.original.recipient) {
+          return <span>{row.original.recipient.name}</span>;
+        }
+
+        if (
+          isDebit &&
+          row.original.wallet.id === walletId &&
+          row.original.internalWallet
+        ) {
+          return (
+            <Link
+              href={`/wallets/${row.original.internalWallet.id}`}
+              className="underline"
+            >
+              {row.original.internalWallet.name}
+            </Link>
+          );
+        }
+
+        return (
+          <Link
+            href={`/wallets/${row.original.wallet.id}`}
+            className="underline"
+          >
+            {row.original.wallet.name}
+          </Link>
+        );
+      },
+      filterFn: (row, _id, value) => {
+        const isDebit = row.original.type === TransactionType.DEBIT;
+
+        if (isDebit || row.original.wallet.id === walletId) {
+          return value.includes(
+            row.original.recipient?.id ?? row.original.internalWallet?.id
+          );
+        }
+
+        if (!isDebit && row.original.wallet.id !== walletId) {
+          console.log("here");
+          return value.includes(
+            row.original.recipient?.id ?? row.original.wallet.id
+          );
         }
       },
-      filterFn: (row, _id, value) =>
-        value.includes(
-          row.original.recipient?.id ??
-            row.original.internalWallet?.id ??
-            row.original.wallet.id
-        ),
     },
     {
       id: "amount",

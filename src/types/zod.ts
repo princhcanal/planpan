@@ -4,39 +4,39 @@ import {
   optionalDateStringSchema,
   transactionTypeSchema,
 } from "../components/form/Form";
-import { ExternalGuapType } from "../server/db/schema/guaps";
+import { RecipientType } from "../server/db/schema/wallets";
 
 export const withId = z.object({ id: z.string().uuid() });
 
-export const guap = z.object({
+export const wallet = z.object({
   name: z.string().min(1, "Required"),
   description: z.string().optional(),
   balance: z.number().nonnegative(),
 });
 
-export const externalGuap = z.object({
+export const recipient = z.object({
   name: z.string().min(1, "Required"),
   description: z.string().optional(),
-  type: z.nativeEnum(ExternalGuapType),
+  type: z.nativeEnum(RecipientType),
 });
 
-export const joinedGuap = z.object({
+export const joinedWallet = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Required"),
 });
 
 export const transactionRefine = (data: z.infer<typeof transaction>) =>
-  (!!data.internalGuapId && !data.externalGuapId) ||
-  (!data.internalGuapId && !!data.externalGuapId);
+  (!!data.internalWalletId && !data.recipientId) ||
+  (!data.internalWalletId && !!data.recipientId);
 
-export const transactionRefineMessage = "Either Guap or Peer/Biller required";
+export const transactionRefineMessage = "Either Wallet or Recipient required";
 
 export const transaction = z.object({
-  guapId: z.string().uuid(),
+  walletId: z.string().uuid(),
   type: transactionTypeSchema,
-  internalGuapId: entitySelectSchema,
-  externalGuapId: entitySelectSchema,
-  sendToGuap: z.boolean().optional(),
+  internalWalletId: entitySelectSchema,
+  recipientId: entitySelectSchema,
+  sendToInternalWallet: z.boolean().optional(),
   amount: z.number().positive(),
   description: z.string().optional(),
   date: optionalDateStringSchema,
@@ -44,12 +44,12 @@ export const transaction = z.object({
 
 export const transactionWithId = transaction.merge(withId);
 
-export const transactionWithJoinedGuaps = z.object({
+export const transactionWithJoinedWallets = z.object({
   date: z.string().datetime(),
   amount: z.number().positive(),
   description: z.string().nullish(),
   type: z.enum(["INCOMING", "OUTGOING"]),
-  guap: joinedGuap,
-  internalGuap: joinedGuap.nullish(),
-  externalGuap: joinedGuap.nullish(),
+  wallet: joinedWallet,
+  internalWallet: joinedWallet.nullish(),
+  recipient: joinedWallet.nullish(),
 });

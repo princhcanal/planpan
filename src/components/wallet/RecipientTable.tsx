@@ -2,7 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { RouterOutputs } from "../../utils/trpc";
 import { DataTable } from "../ui/DataTable";
 import { mapEnumToLabelValuePair } from "../../utils";
-import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { RecipientType } from "../../server/db/schema/wallets";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,18 +11,18 @@ import {
 } from "../ui/DropdownMenu";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/Button";
-import { ExternalGuapActions } from "./ExternalGuapActions";
+import { RecipientActions } from "./RecipientActions";
 
-export type ExternalGuap = RouterOutputs["externalGuap"]["getAll"][number];
+export type Recipient = RouterOutputs["recipient"]["getAll"][number];
 
-interface ExternalGuapTableProps {
-  externalGuaps: ExternalGuap[];
+interface RecipientTableProps {
+  recipients: Recipient[];
 }
 
-export const ExternalGuapTable: React.FC<ExternalGuapTableProps> = ({
-  externalGuaps,
+export const RecipientTable: React.FC<RecipientTableProps> = ({
+  recipients,
 }) => {
-  const columns: ColumnDef<ExternalGuap>[] = [
+  const columns: ColumnDef<Recipient>[] = [
     { id: "name", header: "Name", accessorKey: "name" },
     { id: "description", header: "Description", accessorKey: "description" },
     {
@@ -45,7 +45,7 @@ export const ExternalGuapTable: React.FC<ExternalGuapTableProps> = ({
 
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <ExternalGuapActions externalGuap={row.original} />
+              <RecipientActions recipient={row.original} />
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -56,7 +56,7 @@ export const ExternalGuapTable: React.FC<ExternalGuapTableProps> = ({
   return (
     <DataTable
       columns={columns}
-      data={externalGuaps}
+      data={recipients}
       searchFilters={[
         { columnId: "name", placeholder: "Search Name" },
         { columnId: "description", placeholder: "Search Description" },
@@ -64,8 +64,8 @@ export const ExternalGuapTable: React.FC<ExternalGuapTableProps> = ({
       multiSelectFilters={[
         {
           columnId: "type",
-          options: mapEnumToLabelValuePair(ExternalGuapType),
-          title: "External Guap Type",
+          options: mapEnumToLabelValuePair(RecipientType),
+          title: "Recipient Type",
         },
       ]}
     ></DataTable>

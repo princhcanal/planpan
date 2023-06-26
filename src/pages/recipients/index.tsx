@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { trpc } from "../../utils/trpc";
 import { Spinner } from "../../components/ui/Spinner";
-import { ExternalGuapTable } from "../../components/guap/ExternalGuapTable";
+import { RecipientTable } from "../../components/wallet/RecipientTable";
 import {
   Dialog,
   DialogContent,
@@ -10,37 +10,37 @@ import {
   DialogTrigger,
 } from "../../components/ui/Dialog";
 import { Plus } from "lucide-react";
-import { Form, externalGuapSchema } from "../../components/form/Form";
+import { Form, recipientSchema } from "../../components/form/Form";
 import { Button } from "../../components/ui/Button";
 import { useState } from "react";
 import type { z } from "zod";
-import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { RecipientType } from "../../server/db/schema/wallets";
 import { mapEnumToLabelValuePair } from "../../utils";
 
-const PeersAndBillers: NextPage = () => {
+const Recipients: NextPage = () => {
   const utils = trpc.useContext();
-  const { data, isLoading, isFetching } = trpc.externalGuap.getAll.useQuery();
+  const { data, isLoading, isFetching } = trpc.recipient.getAll.useQuery();
   const [isOpen, setIsOpen] = useState(false);
-  const createPeerBiller = trpc.externalGuap.create.useMutation({
+  const createPeerBiller = trpc.recipient.create.useMutation({
     onSuccess: () => {
-      utils.externalGuap.getAll.invalidate();
+      utils.recipient.getAll.invalidate();
       setIsOpen(false);
     },
   });
 
-  const onSubmit = (data: z.infer<typeof externalGuapSchema>) => {
-    createPeerBiller.mutate({ ...data, type: data.type as ExternalGuapType });
+  const onSubmit = (data: z.infer<typeof recipientSchema>) => {
+    createPeerBiller.mutate({ ...data, type: data.type as RecipientType });
   };
 
   const defaultValues = {
-    type: ExternalGuapType.PEER,
+    type: RecipientType.PEER,
   };
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-3xl font-bold">Peers & Billers</h2>
+          <h2 className="text-3xl font-bold">Recipients</h2>
           {isFetching && !isLoading && <Spinner />}
         </div>
 
@@ -51,24 +51,24 @@ const PeersAndBillers: NextPage = () => {
 
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Guap</DialogTitle>
+              <DialogTitle>Create Recipient</DialogTitle>
             </DialogHeader>
 
             <Form
-              schema={externalGuapSchema}
+              schema={recipientSchema}
               onSubmit={onSubmit}
               props={{
                 name: {
-                  placeholder: "BPI Savings Account",
+                  placeholder: "PLDT Home",
                   label: "Name",
                 },
                 description: {
-                  placeholder: "Main Savings Account",
+                  placeholder: "Account No. 123456789",
                   label: "Description",
                   type: "textarea",
                 },
                 type: {
-                  options: mapEnumToLabelValuePair(ExternalGuapType),
+                  options: mapEnumToLabelValuePair(RecipientType),
                   label: "Type",
                 },
               }}
@@ -87,9 +87,9 @@ const PeersAndBillers: NextPage = () => {
         </Dialog>
       </div>
 
-      {data && <ExternalGuapTable externalGuaps={data} />}
+      {data && <RecipientTable recipients={data} />}
     </div>
   );
 };
 
-export default PeersAndBillers;
+export default Recipients;

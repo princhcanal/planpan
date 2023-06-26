@@ -12,30 +12,30 @@ import { Trash } from "lucide-react";
 import { Button } from "../ui/Button";
 import { trpc } from "../../utils/trpc";
 import type { TransactionType } from "../../server/db/schema/transactions";
-import type { TransactionWithGuaps } from "./TransactionTable";
+import type { TransactionWithWallets } from "./TransactionTable";
 
 export interface TransactionDeleteDialogProps {
-  guapId: string;
-  transaction: TransactionWithGuaps;
+  walletId: string;
+  transaction: TransactionWithWallets;
 }
 
 export const TransactionDeleteDialog: React.FC<
   TransactionDeleteDialogProps
-> = ({ guapId, transaction }) => {
+> = ({ walletId, transaction }) => {
   const utils = trpc.useContext();
   const deleteTransaction = trpc.transaction.deleteTransaction.useMutation({
     onSuccess: (_, deletedTransaction) => {
-      utils.guap.getOne.invalidate({ id: guapId });
-      utils.transaction.getTransactionsByGuap.invalidate({
-        id: guapId,
+      utils.wallet.getOne.invalidate({ id: walletId });
+      utils.transaction.getTransactionsByWallet.invalidate({
+        id: walletId,
       });
 
-      if (deletedTransaction.internalGuapId) {
-        utils.guap.getOne.invalidate({
-          id: deletedTransaction.internalGuapId,
+      if (deletedTransaction.internalWalletId) {
+        utils.wallet.getOne.invalidate({
+          id: deletedTransaction.internalWalletId,
         });
-        utils.transaction.getTransactionsByGuap.invalidate({
-          id: deletedTransaction.internalGuapId,
+        utils.transaction.getTransactionsByWallet.invalidate({
+          id: deletedTransaction.internalWalletId,
         });
       }
     },
@@ -74,11 +74,11 @@ export const TransactionDeleteDialog: React.FC<
             onClick={() => {
               return deleteTransaction.mutate({
                 ...transaction,
-                guapId: transaction.guap.id,
+                walletId: transaction.wallet.id,
                 date: new Date(transaction.date).toISOString(),
                 description: transaction.description ?? undefined,
-                internalGuapId: transaction.internalGuap?.id ?? undefined,
-                externalGuapId: transaction.externalGuap?.id ?? undefined,
+                internalWalletId: transaction.internalWallet?.id ?? undefined,
+                recipientId: transaction.recipient?.id ?? undefined,
                 type: transaction.type as TransactionType,
               });
             }}

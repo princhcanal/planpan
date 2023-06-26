@@ -5,18 +5,18 @@ import { DateInput } from "./DateInput";
 import { NumberInput } from "./NumberInput";
 import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
-import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { RecipientType } from "../../server/db/schema/wallets";
 import { TransactionType } from "../../server/db/schema/transactions";
 
-export const externalGuapTypeSchema = createUniqueFieldSchema(
-  z.enum([ExternalGuapType.BILLER, ExternalGuapType.PEER]),
-  "externalGuapTypeSchema"
+export const recipientTypeSchema = createUniqueFieldSchema(
+  z.enum([RecipientType.BILLER, RecipientType.PEER]),
+  "externalWalletTypeSchema"
 );
 
-export const externalGuapSchema = z.object({
+export const recipientSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  type: externalGuapTypeSchema,
+  type: recipientTypeSchema,
 });
 
 export const dateStringSchema = createUniqueFieldSchema(
@@ -30,7 +30,7 @@ export const optionalDateStringSchema = createUniqueFieldSchema(
 );
 
 export const transactionTypeSchema = createUniqueFieldSchema(
-  z.enum([TransactionType.OUTGOING, TransactionType.INCOMING]),
+  z.enum([TransactionType.DEBIT, TransactionType.CREDIT]),
   "transactionTypeSchema"
 );
 
@@ -43,7 +43,7 @@ const mapping = [
   [z.string(), TextInput] as const,
   [dateStringSchema, DateInput] as const,
   [optionalDateStringSchema, DateInput] as const,
-  [externalGuapTypeSchema, SelectInput] as const,
+  [recipientTypeSchema, SelectInput] as const,
   [transactionTypeSchema, SelectInput] as const,
   [entitySelectSchema, SelectInput] as const,
   [z.number(), NumberInput] as const,

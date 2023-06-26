@@ -11,11 +11,11 @@ export const SideNav = () => {
         <SideNavLink href="/dashboard" icon={BarChartBig}>
           Dashboard
         </SideNavLink>
-        <SideNavLink href="/guaps" icon={CreditCard}>
-          Accounts
+        <SideNavLink href="/wallets" icon={CreditCard}>
+          Wallets
         </SideNavLink>
-        <SideNavLink href="/peers-and-billers" icon={Users}>
-          Peers & Billers
+        <SideNavLink href="/recipients" icon={Users}>
+          Recipients
         </SideNavLink>
       </div>
 

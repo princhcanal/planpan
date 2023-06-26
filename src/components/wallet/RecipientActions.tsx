@@ -10,12 +10,12 @@ import {
 } from "../ui/AlertDialog";
 import { Pencil, Trash } from "lucide-react";
 import { withId } from "../../types/zod";
-import type { ExternalGuap } from "./ExternalGuapTable";
+import type { Recipient } from "./RecipientTable";
 import { DropdownMenuItem } from "../ui/DropdownMenu";
 import { Button } from "../ui/Button";
 import { trpc } from "../../utils/trpc";
-import { Form, externalGuapSchema } from "../form/Form";
-import { ExternalGuapType } from "../../server/db/schema/guaps";
+import { Form, recipientSchema } from "../form/Form";
+import { RecipientType } from "../../server/db/schema/wallets";
 import { mapEnumToLabelValuePair } from "../../utils";
 import {
   Dialog,
@@ -26,29 +26,29 @@ import {
 } from "../ui/Dialog";
 import type { z } from "zod";
 
-interface ExternalGuapActionsProps {
-  externalGuap: ExternalGuap;
+interface RecipientActionsProps {
+  recipient: Recipient;
 }
 
-export const ExternalGuapActions: React.FC<ExternalGuapActionsProps> = ({
-  externalGuap,
+export const RecipientActions: React.FC<RecipientActionsProps> = ({
+  recipient,
 }) => {
   const utils = trpc.useContext();
 
-  const editGuap = trpc.externalGuap.edit.useMutation({
+  const editRecipient = trpc.recipient.edit.useMutation({
     onSuccess: () => {
-      utils.externalGuap.getAll.invalidate();
+      utils.recipient.getAll.invalidate();
     },
   });
-  const deleteGuap = trpc.externalGuap.delete.useMutation({
+  const deleteRecipient = trpc.recipient.delete.useMutation({
     onSuccess: () => {
-      utils.externalGuap.getAll.invalidate();
+      utils.recipient.getAll.invalidate();
     },
   });
-  const editExternalGuapSchema = externalGuapSchema.merge(withId);
+  const editRecipientSchema = recipientSchema.merge(withId);
 
-  const onSubmit = (data: z.infer<typeof editExternalGuapSchema>) => {
-    editGuap.mutate(data);
+  const onSubmit = (data: z.infer<typeof editRecipientSchema>) => {
+    editRecipient.mutate(data);
   };
 
   return (
@@ -69,11 +69,11 @@ export const ExternalGuapActions: React.FC<ExternalGuapActionsProps> = ({
 
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Guap</DialogTitle>
+            <DialogTitle>Edit Recipient</DialogTitle>
           </DialogHeader>
 
           <Form
-            schema={editExternalGuapSchema}
+            schema={editRecipientSchema}
             onSubmit={onSubmit}
             props={{
               name: {
@@ -88,20 +88,20 @@ export const ExternalGuapActions: React.FC<ExternalGuapActionsProps> = ({
                 type: "hidden",
               },
               type: {
-                options: mapEnumToLabelValuePair(ExternalGuapType),
+                options: mapEnumToLabelValuePair(RecipientType),
                 label: "Type",
                 hidden: true,
               },
             }}
             defaultValues={{
-              name: externalGuap.name,
-              description: externalGuap.description ?? undefined,
-              id: externalGuap.id,
-              type: externalGuap.type,
+              name: recipient.name,
+              description: recipient.description ?? undefined,
+              id: recipient.id,
+              type: recipient.type,
             }}
             renderAfter={() => (
               <div className="mt-4 flex justify-end">
-                <Button isLoading={editGuap.isLoading}>Save</Button>
+                <Button isLoading={editRecipient.isLoading}>Save</Button>
               </div>
             )}
           />
@@ -125,10 +125,10 @@ export const ExternalGuapActions: React.FC<ExternalGuapActionsProps> = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {externalGuap.type.toLowerCase()}?
+              Delete {recipient.type.toLowerCase()}?
             </AlertDialogTitle>
-            Are you sure you want to delete this{" "}
-            {externalGuap.type.toLowerCase()}? This action cannot be undone
+            Are you sure you want to delete this {recipient.type.toLowerCase()}?
+            This action cannot be undone
             <AlertDialogDescription></AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -137,8 +137,8 @@ export const ExternalGuapActions: React.FC<ExternalGuapActionsProps> = ({
 
             <Button
               variant="destructive"
-              onClick={() => deleteGuap.mutate({ id: externalGuap.id })}
-              isLoading={deleteGuap.isLoading}
+              onClick={() => deleteRecipient.mutate({ id: recipient.id })}
+              isLoading={deleteRecipient.isLoading}
             >
               Delete
             </Button>

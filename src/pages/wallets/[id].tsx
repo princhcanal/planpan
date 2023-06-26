@@ -24,23 +24,25 @@ import { TransactionType } from "../../server/db/schema/transactions";
 import { TransactionTable } from "../../components/transaction/TransactionTable";
 import { type LabelValuePair } from "../../components/form/SelectInput";
 import { ArrowLeftRight } from "lucide-react";
-import { GuapActions } from "../../components/guap/GuapActions";
+import { WalletActions } from "../../components/wallet/WalletActions";
 import { Spinner } from "../../components/ui/Spinner";
 
-const GuapDetails: NextPage = () => {
+const WalletDetails: NextPage = () => {
   const {
     query: { id },
   } = useRouter();
   const utils = trpc.useContext();
-  const guaps = trpc.guap.getAll.useQuery();
-  const guapsExcludingSelf = guaps.data?.filter((guap) => guap.id !== id);
-  const externalGuaps = trpc.externalGuap.getAll.useQuery();
-  const guap = trpc.guap.getOne.useQuery(
+  const wallets = trpc.wallet.getAll.useQuery();
+  const walletsExcludingSelf = wallets.data?.filter(
+    (wallet) => wallet.id !== id
+  );
+  const recipients = trpc.recipient.getAll.useQuery();
+  const wallet = trpc.wallet.getOne.useQuery(
     { id: id as string },
     { enabled: !!id }
   );
   const { data: transactionsData, isFetching: transactionsFetching } =
-    trpc.transaction.getTransactionsByGuap.useQuery(
+    trpc.transaction.getTransactionsByWallet.useQuery(
       {
         id: id as string,
       },
@@ -48,8 +50,8 @@ const GuapDetails: NextPage = () => {
     );
   const createTransaction = trpc.transaction.createTransaction.useMutation({
     onSuccess: () => {
-      utils.guap.getOne.invalidate({ id: id as string });
-      utils.transaction.getTransactionsByGuap.invalidate({
+      utils.wallet.getOne.invalidate({ id: id as string });
+      utils.transaction.getTransactionsByWallet.invalidate({
         id: id as string,
       });
       setIsCreateDialogOpen(false);
@@ -62,10 +64,10 @@ const GuapDetails: NextPage = () => {
     transactionRefineMessage
   );
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
-    if (guap.data?.balance) {
+    if (wallet.data?.balance) {
       if (
-        watchAmount > guap.data.balance &&
-        watchType === TransactionType.OUTGOING
+        watchAmount > wallet.data.balance &&
+        watchType === TransactionType.DEBIT
       ) {
       } else {
         createTransaction.mutate(data);
@@ -76,46 +78,46 @@ const GuapDetails: NextPage = () => {
   const form = useForm<z.infer<typeof transactionSchema>>();
 
   const defaultValues = {
-    type: TransactionType.OUTGOING,
-    guapId: guap.data?.id,
-    sendToGuap: false,
+    type: TransactionType.DEBIT,
+    walletId: wallet.data?.id,
+    sendToInternalWallet: false,
   };
 
   const watchType = form.watch("type");
-  const watchSendToGuap = form.watch("sendToGuap");
+  const watchSendToInternalWallet = form.watch("sendToInternalWallet");
   const watchAmount = form.watch("amount");
-  const watchExternalGuapId = form.watch("externalGuapId");
-  const watchInternalGuapId = form.watch("internalGuapId");
+  const watchRecipientId = form.watch("recipientId");
+  const watchInternalWalletId = form.watch("internalWalletId");
 
   const [amountErrorMessage, setAmountErrorMessage] = useState("");
-  const [guapErrorMessage, setGuapErrorMessage] = useState("");
+  const [walletErrorMessage, setWalletErrorMessage] = useState("");
 
   useEffect(() => {
-    if (watchType === TransactionType.INCOMING) {
-      form.resetField("sendToGuap", { defaultValue: false });
-      form.resetField("internalGuapId", {
+    if (watchType === TransactionType.CREDIT) {
+      form.resetField("sendToInternalWallet", { defaultValue: false });
+      form.resetField("internalWalletId", {
         defaultValue: undefined,
       });
     }
   }, [watchType, form]);
 
   useEffect(() => {
-    form.resetField("externalGuapId", {
+    form.resetField("recipientId", {
       defaultValue: undefined,
     });
-    form.resetField("internalGuapId", {
+    form.resetField("internalWalletId", {
       defaultValue: undefined,
     });
-  }, [watchSendToGuap, form]);
+  }, [watchSendToInternalWallet, form]);
 
   useEffect(() => {
-    if (guap.data?.balance !== null && guap.data?.balance !== undefined) {
+    if (wallet.data?.balance !== null && wallet.data?.balance !== undefined) {
       if (
-        watchAmount > guap.data.balance &&
-        watchType === TransactionType.OUTGOING
+        watchAmount > wallet.data.balance &&
+        watchType === TransactionType.DEBIT
       ) {
         setAmountErrorMessage(
-          `Not enough balance (₱ ${numeral(guap.data.balance).format(
+          `Not enough balance (₱ ${numeral(wallet.data.balance).format(
             "0,0.00"
           )})`
         );
@@ -123,55 +125,55 @@ const GuapDetails: NextPage = () => {
         setAmountErrorMessage("");
       }
     }
-  }, [watchAmount, watchType, form, guap.data?.balance]);
+  }, [watchAmount, watchType, form, wallet.data?.balance]);
 
   useEffect(() => {
-    if (!!watchExternalGuapId || !!watchInternalGuapId) {
-      setGuapErrorMessage("");
+    if (!!watchRecipientId || !!watchInternalWalletId) {
+      setWalletErrorMessage("");
     }
-  }, [watchExternalGuapId, watchInternalGuapId]);
+  }, [watchRecipientId, watchInternalWalletId]);
 
-  const setGuapIdErrors = () => {
-    if (!watchExternalGuapId && !watchInternalGuapId) {
-      setGuapErrorMessage("Must choose either Guap or Peer/Biller");
+  const setWalletIdErrors = () => {
+    if (!watchRecipientId && !watchInternalWalletId) {
+      setWalletErrorMessage("Must choose either Wallet or Recipient");
     }
   };
 
   const resetErrorMessages = () => {
-    setGuapErrorMessage("");
+    setWalletErrorMessage("");
     setAmountErrorMessage("");
   };
 
-  const guapFilterOptions: LabelValuePair[] =
-    guaps.data?.map((g) => ({
+  const walletFilterOptions: LabelValuePair[] =
+    wallets.data?.map((g) => ({
       label: g.name,
       value: g.id,
     })) ?? [];
-  const externalGuapFilterOptions: LabelValuePair[] =
-    externalGuaps.data?.map((g) => ({
+  const externalWalletFilterOptions: LabelValuePair[] =
+    recipients.data?.map((g) => ({
       label: g.name,
       value: g.id,
     })) ?? [];
 
-  return guap.data ? (
+  return wallet.data ? (
     <div>
       <div className="mb-12 flex justify-between gap-8">
         <div>
           <p className="text-sm text-muted-foreground">Balance</p>
           <h1 className="mb-2 text-4xl font-extrabold text-highlight">
-            &#8369; <span>{numeral(guap.data.balance).format("0,0")}</span>
+            &#8369; <span>{numeral(wallet.data.balance).format("0,0")}</span>
             <span className="text-lg">
-              {numeral(guap.data.balance).format(".00")}
+              {numeral(wallet.data.balance).format(".00")}
             </span>
           </h1>
-          <h2 className="text-xl font-semibold">{guap.data.name}</h2>
+          <h2 className="text-xl font-semibold">{wallet.data.name}</h2>
           <p className="whitespace-pre-line text-muted-foreground">
-            {guap.data.description}
+            {wallet.data.description}
           </p>
         </div>
 
         <div className="flex gap-2">
-          <GuapActions guap={guap.data} />
+          <WalletActions wallet={wallet.data} />
         </div>
       </div>
 
@@ -208,38 +210,38 @@ const GuapDetails: NextPage = () => {
                 schema={transactionSchema}
                 onSubmit={onSubmit}
                 props={{
-                  guapId: {
+                  walletId: {
                     type: "hidden",
                   },
                   type: {
                     options: mapEnumToLabelValuePair(TransactionType),
                     label: "Type",
                   },
-                  internalGuapId: {
+                  internalWalletId: {
                     label: "Send To",
-                    placeholder: "Choose Guap",
+                    placeholder: "Choose Wallet",
                     options:
-                      guapsExcludingSelf?.map((guap) => ({
-                        label: guap.name,
-                        value: guap.id,
+                      walletsExcludingSelf?.map((wallet) => ({
+                        label: wallet.name,
+                        value: wallet.id,
                       })) ?? [],
-                    hidden: !watchSendToGuap,
-                    errorMessage: guapErrorMessage,
+                    hidden: !watchSendToInternalWallet,
+                    errorMessage: walletErrorMessage,
                   },
-                  externalGuapId: {
+                  recipientId: {
                     label: "Send To",
                     placeholder: "Choose Peer/Biller",
                     options:
-                      externalGuaps.data?.map((guap) => ({
-                        label: guap.name,
-                        value: guap.id,
+                      recipients.data?.map((wallet) => ({
+                        label: wallet.name,
+                        value: wallet.id,
                       })) ?? [],
-                    hidden: watchSendToGuap ?? false,
-                    errorMessage: guapErrorMessage,
+                    hidden: watchSendToInternalWallet ?? false,
+                    errorMessage: walletErrorMessage,
                   },
-                  sendToGuap: {
-                    text: "Send to guap?",
-                    disabled: watchType === TransactionType.INCOMING,
+                  sendToInternalWallet: {
+                    text: "Send to wallet?",
+                    disabled: watchType === TransactionType.CREDIT,
                   },
                   amount: {
                     placeholder: "5,000",
@@ -264,7 +266,7 @@ const GuapDetails: NextPage = () => {
                     isLoading={createTransaction.isLoading}
                     type="submit"
                     onClick={() => {
-                      setGuapIdErrors();
+                      setWalletIdErrors();
                     }}
                   >
                     Save
@@ -277,8 +279,8 @@ const GuapDetails: NextPage = () => {
 
         <TransactionTable
           transactions={transactionsData ?? []}
-          guapId={id as string}
-          guaps={guapFilterOptions.concat(externalGuapFilterOptions)}
+          walletId={id as string}
+          wallets={walletFilterOptions.concat(externalWalletFilterOptions)}
         />
       </div>
     </div>
@@ -287,4 +289,4 @@ const GuapDetails: NextPage = () => {
   );
 };
 
-export default GuapDetails;
+export default WalletDetails;

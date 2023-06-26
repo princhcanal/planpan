@@ -16,30 +16,30 @@ import { mapEnumToLabelValuePair } from "../../utils";
 import { type LabelValuePair } from "../form/SelectInput";
 import { cn } from "../../lib/utils";
 import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
-import { format } from "date-fns";
+import { addHours, format } from "date-fns";
 import { isBetween } from "../../utils/date";
 import type { RouterOutputs } from "../../utils/trpc";
 
-export type TransactionWithGuaps =
-  RouterOutputs["transaction"]["getTransactionsByGuap"][number];
+export type TransactionWithWallets =
+  RouterOutputs["transaction"]["getTransactionsByWallet"][number];
 
 interface TransactionTableProps {
-  guapId: string;
-  guaps: LabelValuePair[];
-  transactions: TransactionWithGuaps[];
+  walletId: string;
+  wallets: LabelValuePair[];
+  transactions: TransactionWithWallets[];
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
-  guapId,
-  guaps,
+  walletId,
+  wallets,
   transactions,
 }) => {
-  const columns: ColumnDef<TransactionWithGuaps>[] = [
+  const columns: ColumnDef<TransactionWithWallets>[] = [
     {
       id: "date",
       header: "Date",
       cell: ({ row }) => {
-        return format(new Date(row.original.date), "iii, PPP");
+        return format(addHours(new Date(row.original.date), 8), "iii, PPP");
       },
       filterFn: (row, _id, value) => {
         const date = row.original.date;
@@ -77,46 +77,46 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       ),
       cell: ({ row }) => {
         const isOutgoingTransaction =
-          guapId === row.original.guap.id &&
-          row.original.type === TransactionType.OUTGOING;
+          walletId === row.original.wallet.id &&
+          row.original.type === TransactionType.DEBIT;
 
         if (isOutgoingTransaction) {
-          if (row.original.externalGuap) {
-            return <span>{row.original.externalGuap.name}</span>;
+          if (row.original.recipient) {
+            return <span>{row.original.recipient.name}</span>;
           }
-          if (row.original.internalGuap) {
+          if (row.original.internalWallet) {
             return (
               <Link
-                href={`/guaps/${row.original.internalGuap.id}`}
+                href={`/wallets/${row.original.internalWallet.id}`}
                 className="underline"
               >
-                {row.original.internalGuap.name}
+                {row.original.internalWallet.name}
               </Link>
             );
           }
         } else {
-          if (row.original.type === TransactionType.OUTGOING) {
+          if (row.original.type === TransactionType.DEBIT) {
             return (
               <Link
-                href={`/guaps/${row.original.guap.id}`}
+                href={`/wallets/${row.original.wallet.id}`}
                 className="underline"
               >
-                {row.original.guap.name}
+                {row.original.wallet.name}
               </Link>
             );
           } else if (
-            row.original.type === TransactionType.INCOMING &&
-            row.original.externalGuap
+            row.original.type === TransactionType.CREDIT &&
+            row.original.recipient
           ) {
-            return <span>{row.original.externalGuap.name}</span>;
+            return <span>{row.original.recipient.name}</span>;
           }
         }
       },
       filterFn: (row, _id, value) =>
         value.includes(
-          row.original.externalGuap?.id ??
-            row.original.internalGuap?.id ??
-            row.original.guap.id
+          row.original.recipient?.id ??
+            row.original.internalWallet?.id ??
+            row.original.wallet.id
         ),
     },
     {
@@ -126,8 +126,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
       cell: ({ row }) => {
         const isOutgoingTransaction =
-          guapId === row.original.guap.id &&
-          row.original.type === TransactionType.OUTGOING;
+          walletId === row.original.wallet.id &&
+          row.original.type === TransactionType.DEBIT;
 
         return (
           <p
@@ -143,7 +143,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
       filterFn: (row, _id, value) => {
         const amount =
-          row.original.type === TransactionType.OUTGOING
+          row.original.type === TransactionType.DEBIT
             ? -row.original.amount
             : row.original.amount;
 
@@ -183,7 +183,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <TransactionDeleteDialog
                 transaction={row.original}
-                guapId={guapId}
+                walletId={walletId}
               />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -205,7 +205,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         },
         {
           columnId: "sent",
-          options: guaps,
+          options: wallets,
           title: "Sent To/From",
           icon: Send,
         },

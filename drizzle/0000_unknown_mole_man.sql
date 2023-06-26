@@ -1,11 +1,11 @@
 DO $$ BEGIN
- CREATE TYPE "external_guap_type" AS ENUM('BILLER', 'PEER');
+ CREATE TYPE "transaction_type" AS ENUM('DEBIT', 'CREDIT');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- CREATE TYPE "transaction_type" AS ENUM('INCOMING', 'OUTGOING');
+ CREATE TYPE "recipient_type" AS ENUM('BILLER', 'PEER');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -59,61 +59,6 @@ CREATE TABLE IF NOT EXISTS "verification_tokens" (
 	"expires" timestamp NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "external_guaps" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"image" text,
-	"type" external_guap_type NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "guaps" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"balance" real NOT NULL,
-	"image" text
-);
-
-CREATE TABLE IF NOT EXISTS "externalGuap" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"image" text,
-	"type" external_guap_type NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "guap" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"balance" real NOT NULL,
-	"image" text
-);
-
-CREATE TABLE IF NOT EXISTS "internalGuap" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"balance" real NOT NULL,
-	"image" text
-);
-
 CREATE TABLE IF NOT EXISTS "transactions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -121,11 +66,66 @@ CREATE TABLE IF NOT EXISTS "transactions" (
 	"date" timestamp DEFAULT now() NOT NULL,
 	"amount" real NOT NULL,
 	"description" text,
-	"guap_id" uuid NOT NULL,
-	"internal_guap_id" uuid,
-	"external_guap_id" uuid,
+	"wallet_id" uuid NOT NULL,
+	"internal_wallet_id" uuid,
+	"recipient_id" uuid,
 	"image" text,
 	"type" transaction_type NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "recipients" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"image" text,
+	"type" recipient_type NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "internalWallet" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"balance" real NOT NULL,
+	"image" text
+);
+
+CREATE TABLE IF NOT EXISTS "recipient" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"image" text,
+	"type" recipient_type NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "wallet" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"balance" real NOT NULL,
+	"image" text
+);
+
+CREATE TABLE IF NOT EXISTS "wallets" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"balance" real NOT NULL,
+	"image" text
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "provider_provider_account_id_unique_idx" ON "accounts" ("provider","provider_account_id");
@@ -151,49 +151,49 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "external_guaps" ADD CONSTRAINT "external_guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_wallet_id_wallets_id_fk" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "guaps" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_internal_wallet_id_wallets_id_fk" FOREIGN KEY ("internal_wallet_id") REFERENCES "wallets"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "externalGuap" ADD CONSTRAINT "external_guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_recipient_id_recipients_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "recipients"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "guap" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "recipients" ADD CONSTRAINT "recipients_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "internalGuap" ADD CONSTRAINT "guaps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "internalWallet" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_guap_id_guaps_id_fk" FOREIGN KEY ("guap_id") REFERENCES "guaps"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "recipient" ADD CONSTRAINT "recipients_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_internal_guap_id_guaps_id_fk" FOREIGN KEY ("internal_guap_id") REFERENCES "guaps"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "wallet" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_external_guap_id_external_guaps_id_fk" FOREIGN KEY ("external_guap_id") REFERENCES "external_guaps"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "wallets" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

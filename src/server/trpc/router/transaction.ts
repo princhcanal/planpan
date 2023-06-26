@@ -10,11 +10,11 @@ import {
 import { protectedProcedure, router } from "../trpc";
 import { TransactionType, transactions } from "../../db/schema/transactions";
 import {
-  guaps,
-  transactionsExternalGuap,
-  transactionsGuap,
-  transactionsInternalGuap,
-} from "../../db/schema/guaps";
+  wallets,
+  transactionsRecipient,
+  transactionsWallet,
+  transactionsInternalWallet,
+} from "../../db/schema/wallets";
 import { and, desc, eq, or } from "drizzle-orm";
 import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
@@ -23,10 +23,10 @@ export const transactionRouter = router({
     return ctx.db
       .select()
       .from(transactions)
-      .innerJoin(guaps, eq(transactions.guapId, guaps.id))
-      .where(eq(guaps.userId, ctx.session.user.id));
+      .innerJoin(wallets, eq(transactions.walletId, wallets.id))
+      .where(eq(wallets.userId, ctx.session.user.id));
   }),
-  getTransactionsByGuap: protectedProcedure
+  getTransactionsByWallet: protectedProcedure
     .input(withId)
     .query(async ({ ctx, input }) => {
       return ctx.db
@@ -36,40 +36,40 @@ export const transactionRouter = router({
           amount: transactions.amount,
           description: transactions.description,
           type: transactions.type,
-          guap: {
-            id: guaps.id,
-            name: guaps.name,
+          wallet: {
+            id: wallets.id,
+            name: wallets.name,
           },
-          internalGuap: {
-            id: transactionsInternalGuap.id,
-            name: transactionsInternalGuap.name,
+          internalWallet: {
+            id: transactionsInternalWallet.id,
+            name: transactionsInternalWallet.name,
           },
-          externalGuap: {
-            id: transactionsExternalGuap.id,
-            name: transactionsExternalGuap.name,
+          recipient: {
+            id: transactionsRecipient.id,
+            name: transactionsRecipient.name,
           },
         })
         .from(transactions)
         .where(
           or(
             and(
-              eq(transactions.guapId, input.id),
-              eq(guaps.userId, ctx.session.user.id)
+              eq(transactions.walletId, input.id),
+              eq(wallets.userId, ctx.session.user.id)
             ),
             and(
-              eq(transactionsInternalGuap.id, input.id),
-              eq(transactionsInternalGuap.userId, ctx.session.user.id)
+              eq(transactionsInternalWallet.id, input.id),
+              eq(transactionsInternalWallet.userId, ctx.session.user.id)
             )
           )
         )
-        .innerJoin(guaps, eq(guaps.id, transactions.guapId))
+        .innerJoin(wallets, eq(wallets.id, transactions.walletId))
         .leftJoin(
-          transactionsInternalGuap,
-          eq(transactionsInternalGuap.id, transactions.internalGuapId)
+          transactionsInternalWallet,
+          eq(transactionsInternalWallet.id, transactions.internalWalletId)
         )
         .leftJoin(
-          transactionsExternalGuap,
-          eq(transactionsExternalGuap.id, transactions.externalGuapId)
+          transactionsRecipient,
+          eq(transactionsRecipient.id, transactions.recipientId)
         )
         .orderBy(desc(transactions.date));
     }),
@@ -78,7 +78,7 @@ export const transactionRouter = router({
     .mutation(async ({ ctx, input }) => {
       preValidate(input);
 
-      delete input.sendToGuap;
+      delete input.sendToInternalWallet;
 
       await ctx.db.transaction(async (tx) => {
         try {
@@ -101,7 +101,7 @@ export const transactionRouter = router({
     .mutation(async ({ ctx, input }) => {
       preValidate(input);
 
-      delete input.sendToGuap;
+      delete input.sendToInternalWallet;
 
       await ctx.db.transaction(async (tx) => {
         try {
@@ -111,11 +111,14 @@ export const transactionRouter = router({
 
           await tx
             .update(transactions)
-            .set({ ...input, date: input.date ?? new Date().toISOString() })
+            .set({
+              ...input,
+              date: input.date ?? new Date().toLocaleDateString(),
+            })
             .where(
               and(
                 eq(transactions.id, input.id),
-                eq(transactionsGuap.userId, ctx.session.user.id)
+                eq(transactionsWallet.userId, ctx.session.user.id)
               )
             );
         } catch (e) {
@@ -154,17 +157,17 @@ export const transactionRouter = router({
 });
 
 const preValidate = (input: z.infer<typeof transaction>) => {
-  if (input.internalGuapId && input.externalGuapId) {
+  if (input.internalWalletId && input.recipientId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Only provide either Guap or Peer/Biller",
+      message: "Only provide either Wallet or Recipient",
     });
   }
 
-  if (!input.internalGuapId && !input.externalGuapId) {
+  if (!input.internalWalletId && !input.recipientId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Either Guap or Peer/Biller required",
+      message: "Either Wallet or Recipient required",
     });
   }
 };
@@ -186,46 +189,46 @@ const resetBalances = async (
     });
   }
 
-  const guap = await db
+  const wallet = await db
     .select()
-    .from(guaps)
-    .where(and(eq(guaps.id, input.guapId), eq(guaps.userId, userId)))
+    .from(wallets)
+    .where(and(eq(wallets.id, input.walletId), eq(wallets.userId, userId)))
     .then((res) => res[0]);
-  if (!guap) {
-    throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+  if (!wallet) {
+    throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
   }
 
   let newBalance;
 
-  if (input.type === TransactionType.INCOMING) {
-    newBalance = guap.balance - transaction.amount;
-  } else if (input.type === TransactionType.OUTGOING) {
-    newBalance = guap.balance + transaction.amount;
+  if (input.type === TransactionType.CREDIT) {
+    newBalance = wallet.balance - transaction.amount;
+  } else if (input.type === TransactionType.DEBIT) {
+    newBalance = wallet.balance + transaction.amount;
 
-    if (input.internalGuapId) {
-      const ownGuap = await db
+    if (input.internalWalletId) {
+      const ownWallet = await db
         .select()
-        .from(guaps)
-        .where(eq(guaps.id, input.internalGuapId))
+        .from(wallets)
+        .where(eq(wallets.id, input.internalWalletId))
         .then((res) => res[0]);
 
-      if (!ownGuap) {
-        throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+      if (!ownWallet) {
+        throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
       }
 
-      const ownGuapNewBalance = ownGuap.balance - transaction.amount;
+      const ownWalletNewBalance = ownWallet.balance - transaction.amount;
 
       await db
-        .update(guaps)
-        .set({ balance: ownGuapNewBalance })
-        .where(eq(guaps.id, ownGuap.id));
+        .update(wallets)
+        .set({ balance: ownWalletNewBalance })
+        .where(eq(wallets.id, ownWallet.id));
     }
   }
 
   await db
-    .update(guaps)
+    .update(wallets)
     .set({ balance: newBalance })
-    .where(eq(guaps.id, input.guapId));
+    .where(eq(wallets.id, input.walletId));
 };
 
 const doTransaction = async (
@@ -233,49 +236,49 @@ const doTransaction = async (
   userId: string,
   input: z.infer<typeof transaction>
 ) => {
-  const guap = await db
+  const wallet = await db
     .select()
-    .from(guaps)
-    .where(and(eq(guaps.id, input.guapId), eq(guaps.userId, userId)))
+    .from(wallets)
+    .where(and(eq(wallets.id, input.walletId), eq(wallets.userId, userId)))
     .then((res) => res[0]);
 
-  if (!guap) {
-    throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+  if (!wallet) {
+    throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
   }
 
-  if (input.amount > guap.balance && input.type === TransactionType.OUTGOING) {
+  if (input.amount > wallet.balance && input.type === TransactionType.DEBIT) {
     throw new TRPCError({ message: "Not enough balance", code: "BAD_REQUEST" });
   }
 
   let newBalance;
 
-  if (input.type === TransactionType.INCOMING) {
-    newBalance = guap.balance + input.amount;
-  } else if (input.type === TransactionType.OUTGOING) {
-    newBalance = guap.balance - input.amount;
+  if (input.type === TransactionType.CREDIT) {
+    newBalance = wallet.balance + input.amount;
+  } else if (input.type === TransactionType.DEBIT) {
+    newBalance = wallet.balance - input.amount;
 
-    if (input.internalGuapId) {
-      const ownGuap = await db
+    if (input.internalWalletId) {
+      const ownWallet = await db
         .select()
-        .from(guaps)
-        .where(eq(guaps.id, input.internalGuapId))
+        .from(wallets)
+        .where(eq(wallets.id, input.internalWalletId))
         .then((res) => res[0]);
 
-      if (!ownGuap) {
-        throw new TRPCError({ message: "Guap not found", code: "NOT_FOUND" });
+      if (!ownWallet) {
+        throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
       }
 
-      const ownGuapNewBalance = ownGuap.balance + input.amount;
+      const ownWalletNewBalance = ownWallet.balance + input.amount;
 
       await db
-        .update(guaps)
-        .set({ balance: ownGuapNewBalance })
-        .where(eq(guaps.id, ownGuap.id));
+        .update(wallets)
+        .set({ balance: ownWalletNewBalance })
+        .where(eq(wallets.id, ownWallet.id));
     }
   }
 
   await db
-    .update(guaps)
+    .update(wallets)
     .set({ balance: newBalance })
-    .where(eq(guaps.id, input.guapId));
+    .where(eq(wallets.id, input.walletId));
 };

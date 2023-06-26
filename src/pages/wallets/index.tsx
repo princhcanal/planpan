@@ -1,8 +1,8 @@
 import { type NextPage } from "next";
 import { Form } from "../../components/form/Form";
-import { GuapItem } from "../../components/guap/GuapItem";
+import { WalletItem } from "../../components/wallet/WalletItem";
 import { Button } from "../../components/ui/Button";
-import { guap } from "../../types/zod";
+import { wallet } from "../../types/zod";
 import { trpc } from "../../utils/trpc";
 import { type z } from "zod";
 import { useState } from "react";
@@ -15,28 +15,28 @@ import {
 } from "../../components/ui/Dialog";
 import { Plus } from "lucide-react";
 import { Spinner } from "../../components/ui/Spinner";
-import { GuapSkeleton } from "../../components/guap/GuapSkeleton";
+import { WalletSkeleton } from "../../components/wallet/WalletSkeleton";
 
-const Guaps: NextPage = () => {
+const Wallets: NextPage = () => {
   const utils = trpc.useContext();
-  const { data, isLoading, isFetching } = trpc.guap.getAll.useQuery();
-  const createGuap = trpc.guap.create.useMutation({
+  const { data, isLoading, isFetching } = trpc.wallet.getAll.useQuery();
+  const createWallet = trpc.wallet.create.useMutation({
     onSuccess: () => {
-      utils.guap.getAll.invalidate();
+      utils.wallet.getAll.invalidate();
       setIsOpen(false);
     },
   });
   const [isOpen, setIsOpen] = useState(false);
 
-  const onSubmit = (data: z.infer<typeof guap>) => {
-    createGuap.mutate(data);
+  const onSubmit = (data: z.infer<typeof wallet>) => {
+    createWallet.mutate(data);
   };
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-3xl font-bold">Guaps</h2>
+          <h2 className="text-3xl font-bold">Wallets</h2>
           {isFetching && !isLoading && <Spinner />}
         </div>
 
@@ -47,11 +47,11 @@ const Guaps: NextPage = () => {
 
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Guap</DialogTitle>
+              <DialogTitle>Create Wallet</DialogTitle>
             </DialogHeader>
 
             <Form
-              schema={guap}
+              schema={wallet}
               onSubmit={onSubmit}
               props={{
                 name: {
@@ -73,10 +73,10 @@ const Guaps: NextPage = () => {
               renderAfter={() => (
                 <Button
                   className="mt-4 w-full"
-                  isLoading={createGuap.isLoading}
+                  isLoading={createWallet.isLoading}
                   type="submit"
                 >
-                  {createGuap.isLoading ? "Saving..." : "Save"}
+                  {createWallet.isLoading ? "Saving..." : "Save"}
                 </Button>
               )}
             />
@@ -85,17 +85,17 @@ const Guaps: NextPage = () => {
       </div>
 
       <div className="flex flex-wrap gap-4">
-        {data?.map((guap) => {
-          return <GuapItem key={guap.id} guap={guap} />;
+        {data?.map((wallet) => {
+          return <WalletItem key={wallet.id} wallet={wallet} />;
         })}
 
         {isLoading &&
           Array(6)
             .fill(0)
-            .map((_, i) => <GuapSkeleton key={i} />)}
+            .map((_, i) => <WalletSkeleton key={i} />)}
       </div>
     </div>
   );
 };
 
-export default Guaps;
+export default Wallets;

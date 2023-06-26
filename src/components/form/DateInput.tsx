@@ -8,7 +8,7 @@ interface DateInputProps {
 }
 
 import * as React from "react";
-import { format } from "date-fns";
+import { addMilliseconds, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Calendar } from "../ui/Calendar";

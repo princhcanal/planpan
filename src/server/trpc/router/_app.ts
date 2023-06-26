@@ -1,15 +1,13 @@
 import { router } from "../trpc";
 import { authRouter } from "./auth";
-import { exampleRouter } from "./example";
-import { externalGuapRouter } from "./externalGuap";
-import { guapRouter } from "./guap";
+import { recipientRouter } from "./recipient";
+import { walletRouter } from "./wallet";
 import { transactionRouter } from "./transaction";
 
 export const appRouter = router({
-  example: exampleRouter,
   auth: authRouter,
-  guap: guapRouter,
-  externalGuap: externalGuapRouter,
+  wallet: walletRouter,
+  recipient: recipientRouter,
   transaction: transactionRouter,
 });
 

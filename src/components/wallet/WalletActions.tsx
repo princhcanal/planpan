@@ -1,7 +1,7 @@
 import { Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 import type { z } from "zod";
-import { withId, guap as guapSchema } from "../../types/zod";
+import { withId, wallet as walletSchema } from "../../types/zod";
 import { trpc } from "../../utils/trpc";
 import {
   AlertDialogHeader,
@@ -21,37 +21,37 @@ import {
   DialogTrigger,
 } from "../ui/Dialog";
 import { Button } from "../ui/Button";
-import type { Guap } from "../../server/db/schema/guaps";
+import type { Wallet } from "../../server/db/schema/wallets";
 import { Form } from "../form/Form";
 import { useRouter } from "next/router";
 
-interface GuapActionsProps {
-  guap: Guap;
+interface WalletActionsProps {
+  wallet: Wallet;
 }
 
-export const GuapActions: React.FC<GuapActionsProps> = ({ guap }) => {
+export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
   const utils = trpc.useContext();
   const router = useRouter();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const editGuap = trpc.guap.edit.useMutation({
+  const editWallet = trpc.wallet.edit.useMutation({
     onSuccess: () => {
-      utils.guap.getAll.invalidate();
-      utils.guap.getOne.invalidate({ id: guap.id });
+      utils.wallet.getAll.invalidate();
+      utils.wallet.getOne.invalidate({ id: wallet.id });
       setIsEditDialogOpen(false);
     },
   });
-  const deleteGuap = trpc.guap.delete.useMutation({
+  const deleteWallet = trpc.wallet.delete.useMutation({
     onSuccess: () => {
-      utils.guap.getAll.invalidate();
+      utils.wallet.getAll.invalidate();
       setIsDeleteDialogOpen(false);
-      router.replace("/guaps");
+      router.replace("/wallets");
     },
   });
-  const editGuapSchema = guapSchema.merge(withId);
+  const editWalletSchema = walletSchema.merge(withId);
 
-  const onEditSubmit = (data: z.infer<typeof editGuapSchema>) => {
-    editGuap.mutate(data);
+  const onEditSubmit = (data: z.infer<typeof editWalletSchema>) => {
+    editWallet.mutate(data);
   };
 
   return (
@@ -65,11 +65,11 @@ export const GuapActions: React.FC<GuapActionsProps> = ({ guap }) => {
 
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Guap</DialogTitle>
+            <DialogTitle>Edit Wallet</DialogTitle>
           </DialogHeader>
 
           <Form
-            schema={editGuapSchema}
+            schema={editWalletSchema}
             onSubmit={onEditSubmit}
             props={{
               name: {
@@ -92,14 +92,14 @@ export const GuapActions: React.FC<GuapActionsProps> = ({ guap }) => {
               },
             }}
             defaultValues={{
-              name: guap.name,
-              description: guap.description ?? undefined,
-              balance: guap.balance ?? undefined,
-              id: guap.id,
+              name: wallet.name,
+              description: wallet.description ?? undefined,
+              balance: wallet.balance ?? undefined,
+              id: wallet.id,
             }}
             renderAfter={() => (
-              <Button className="w-full" isLoading={editGuap.isLoading}>
-                {editGuap.isLoading ? "Saving" : "Save"}
+              <Button className="w-full" isLoading={editWallet.isLoading}>
+                Save
               </Button>
             )}
           />
@@ -118,8 +118,8 @@ export const GuapActions: React.FC<GuapActionsProps> = ({ guap }) => {
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Guap?</AlertDialogTitle>
-            Are you sure you want to delete this guap? This action cannot be
+            <AlertDialogTitle>Delete Walelt?</AlertDialogTitle>
+            Are you sure you want to delete this wallet? This action cannot be
             undone
             <AlertDialogDescription></AlertDialogDescription>
           </AlertDialogHeader>
@@ -129,8 +129,8 @@ export const GuapActions: React.FC<GuapActionsProps> = ({ guap }) => {
 
             <Button
               variant="destructive"
-              onClick={() => deleteGuap.mutate({ id: guap.id })}
-              isLoading={deleteGuap.isLoading}
+              onClick={() => deleteWallet.mutate({ id: wallet.id })}
+              isLoading={deleteWallet.isLoading}
             >
               Delete
             </Button>

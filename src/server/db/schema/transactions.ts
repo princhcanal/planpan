@@ -7,18 +7,17 @@ import {
   pgEnum,
   real,
 } from "drizzle-orm/pg-core";
-import { guaps, externalGuaps } from "./guaps";
+import { wallets, recipients } from "./wallets";
 import { attachments } from "./attachments";
 
-// TODO: rename to DEBIT/CREDIT or DEPOSIT/EXPENSE
 export const transactionTypeEnum = pgEnum("transaction_type", [
-  "INCOMING",
-  "OUTGOING",
+  "DEBIT",
+  "CREDIT",
 ]);
 
 export enum TransactionType {
-  INCOMING = "INCOMING",
-  OUTGOING = "OUTGOING",
+  CREDIT = "CREDIT",
+  DEBIT = "DEBIT",
 }
 
 export const transactions = pgTable("transactions", {
@@ -28,13 +27,13 @@ export const transactions = pgTable("transactions", {
   date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
   amount: real("amount").notNull(),
   description: text("description"),
-  guapId: uuid("guap_id")
+  walletId: uuid("wallet_id")
     .notNull()
-    .references(() => guaps.id, { onDelete: "cascade" }),
-  internalGuapId: uuid("internal_guap_id").references(() => guaps.id, {
+    .references(() => wallets.id, { onDelete: "cascade" }),
+  internalWalletId: uuid("internal_wallet_id").references(() => wallets.id, {
     onDelete: "cascade",
   }),
-  externalGuapId: uuid("external_guap_id").references(() => externalGuaps.id, {
+  recipientId: uuid("recipient_id").references(() => recipients.id, {
     onDelete: "cascade",
   }),
   image: text("image"),
@@ -44,17 +43,17 @@ export const transactions = pgTable("transactions", {
 export const transactionsRelations = relations(
   transactions,
   ({ one, many }) => ({
-    guap: one(guaps, {
-      fields: [transactions.guapId],
-      references: [guaps.id],
+    wallet: one(wallets, {
+      fields: [transactions.walletId],
+      references: [wallets.id],
     }),
-    internalGuap: one(guaps, {
-      fields: [transactions.internalGuapId],
-      references: [guaps.id],
+    internalWallet: one(wallets, {
+      fields: [transactions.internalWalletId],
+      references: [wallets.id],
     }),
-    externalGuap: one(externalGuaps, {
-      fields: [transactions.externalGuapId],
-      references: [externalGuaps.id],
+    recipient: one(recipients, {
+      fields: [transactions.recipientId],
+      references: [recipients.id],
     }),
     attachments: many(attachments),
   })

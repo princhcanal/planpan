@@ -8,11 +8,11 @@ export const BottomNav = () => {
       <BottomNavLink href="/dashboard" icon={BarChartBig}>
         Dashboard
       </BottomNavLink>
-      <BottomNavLink href="/guaps" icon={CreditCard}>
-        Accounts
+      <BottomNavLink href="/wallets" icon={CreditCard}>
+        Wallets
       </BottomNavLink>
-      <BottomNavLink href="/peers-and-billers" icon={Users}>
-        Peers & Billers
+      <BottomNavLink href="/recipients" icon={Users}>
+        Recipients
       </BottomNavLink>
 
       <ThemePicker />

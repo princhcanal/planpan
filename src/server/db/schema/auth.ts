@@ -7,7 +7,7 @@ import {
   integer,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { externalGuaps, guaps } from "./guaps";
+import { recipients, wallets } from "./wallets";
 
 export const accounts = pgTable(
   "accounts",
@@ -92,8 +92,8 @@ export const users = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
-  guaps: many(guaps),
-  externalGuaps: many(externalGuaps),
+  wallets: many(wallets),
+  recipients: many(recipients),
 }));
 
 export type User = InferModel<typeof users>;

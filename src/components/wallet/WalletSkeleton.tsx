@@ -1,7 +1,7 @@
 import { CreditCard } from "lucide-react";
 import { Skeleton } from "../ui/Skeleton";
 
-export const GuapSkeleton = () => {
+export const WalletSkeleton = () => {
   return (
     <Skeleton className="flex h-52 max-w-full basis-full flex-col justify-between rounded-xl p-4 text-background dark:text-foreground md:max-w-[48%] md:basis-[48%] lg:max-w-[32%] lg:basis-[32%]">
       <div className="flex items-center justify-end">

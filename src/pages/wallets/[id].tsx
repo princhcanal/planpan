@@ -161,7 +161,10 @@ const WalletDetails: NextPage = () => {
         <div>
           <p className="text-sm text-muted-foreground">Balance</p>
           <h1 className="mb-2 text-4xl font-extrabold text-highlight">
-            &#8369; <span>{numeral(wallet.data.balance).format("0,0")}</span>
+            &#8369;{" "}
+            <span>
+              {numeral(wallet.data.balance).format("0,0", Math.floor)}
+            </span>
             <span className="text-lg">
               {numeral(wallet.data.balance).format(".00")}
             </span>

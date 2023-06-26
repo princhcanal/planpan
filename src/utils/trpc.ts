@@ -13,7 +13,7 @@ const getBaseUrl = () => {
   return `http://localhost:${process.env.PORT ?? 3000}`; // dev SSR should use localhost
 };
 
-const defaultToastConfig: Toast = {
+export const defaultToastConfig: Toast = {
   title: "Error",
   description: "Something went wrong",
   variant: "destructive",

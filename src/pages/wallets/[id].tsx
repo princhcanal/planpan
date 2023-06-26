@@ -66,7 +66,7 @@ const WalletDetails: NextPage = () => {
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
     if (wallet.data?.balance) {
       if (
-        watchAmount > wallet.data.balance &&
+        watchAmount > Number.parseFloat(wallet.data.balance) &&
         watchType === TransactionType.DEBIT
       ) {
       } else {
@@ -113,7 +113,7 @@ const WalletDetails: NextPage = () => {
   useEffect(() => {
     if (wallet.data?.balance !== null && wallet.data?.balance !== undefined) {
       if (
-        watchAmount > wallet.data.balance &&
+        watchAmount > Number.parseFloat(wallet.data.balance) &&
         watchType === TransactionType.DEBIT
       ) {
         setAmountErrorMessage(

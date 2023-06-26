@@ -8,7 +8,7 @@ export const addSeedData = async (userId: string) => {
     .values({
       name: "BPI Savings Account",
       userId,
-      balance: 50000,
+      balance: "50000",
       description: "Main Savings Account",
     })
     .returning()
@@ -20,7 +20,7 @@ export const addSeedData = async (userId: string) => {
     .values({
       name: "Metrobank Savings Account",
       userId,
-      balance: 50000,
+      balance: "50000",
       description: "Secondary Savings Account",
     })
     .returning()
@@ -48,7 +48,7 @@ export const addSeedData = async (userId: string) => {
 
   await db.insert(transactions).values({
     description: "Fund Transfer",
-    amount: 5000,
+    amount: "5000",
     type: TransactionType.DEBIT,
     walletId: bpiSavingsAccount.id,
     internalWalletId: metrobankSavingsAccount.id,
@@ -56,7 +56,7 @@ export const addSeedData = async (userId: string) => {
 
   await db.insert(transactions).values({
     description: "Groceries",
-    amount: 5000,
+    amount: "5000",
     type: TransactionType.DEBIT,
     walletId: bpiSavingsAccount.id,
     recipientId: mamaSavingsAccount.id,

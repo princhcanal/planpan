@@ -116,7 +116,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         }
 
         if (!isDebit && row.original.wallet.id !== walletId) {
-          console.log("here");
           return value.includes(
             row.original.recipient?.id ?? row.original.wallet.id
           );

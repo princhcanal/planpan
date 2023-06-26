@@ -74,6 +74,7 @@ export const TransactionDeleteDialog: React.FC<
             onClick={() => {
               return deleteTransaction.mutate({
                 ...transaction,
+                amount: Number.parseFloat(transaction.amount),
                 walletId: transaction.wallet.id,
                 date: new Date(transaction.date).toISOString(),
                 description: transaction.description ?? undefined,

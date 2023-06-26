@@ -90,6 +90,7 @@ export const transactionRouter = router({
 
           await tx.insert(transactions).values({
             ...input,
+            amount: input.amount.toString(),
             date: input.date ?? new Date().toISOString(),
           });
         } catch (e) {
@@ -117,6 +118,7 @@ export const transactionRouter = router({
             .update(transactions)
             .set({
               ...input,
+              amount: input.amount.toString(),
               date: input.date ?? new Date().toLocaleDateString(),
             })
             .where(
@@ -136,12 +138,6 @@ export const transactionRouter = router({
       transactionWithId.refine(transactionRefine, transactionRefineMessage)
     )
     .mutation(async ({ ctx, input }) => {
-      const sleep = (ms: number) => {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      };
-
-      await sleep(3000);
-
       await ctx.db.transaction(async (tx) => {
         try {
           // reset balances then delete transaction
@@ -205,9 +201,11 @@ const resetBalances = async (
   let newBalance;
 
   if (input.type === TransactionType.CREDIT) {
-    newBalance = wallet.balance - transaction.amount;
+    newBalance =
+      Number.parseFloat(wallet.balance) - Number.parseFloat(transaction.amount);
   } else if (input.type === TransactionType.DEBIT) {
-    newBalance = wallet.balance + transaction.amount;
+    newBalance =
+      Number.parseFloat(wallet.balance) + Number.parseFloat(transaction.amount);
 
     if (input.internalWalletId) {
       const ownWallet = await db
@@ -220,18 +218,20 @@ const resetBalances = async (
         throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
       }
 
-      const ownWalletNewBalance = ownWallet.balance - transaction.amount;
+      const ownWalletNewBalance =
+        Number.parseFloat(ownWallet.balance) -
+        Number.parseFloat(transaction.amount);
 
       await db
         .update(wallets)
-        .set({ balance: ownWalletNewBalance })
+        .set({ balance: ownWalletNewBalance.toString() })
         .where(eq(wallets.id, ownWallet.id));
     }
   }
 
   await db
     .update(wallets)
-    .set({ balance: newBalance })
+    .set({ balance: newBalance?.toString() })
     .where(eq(wallets.id, input.walletId));
 };
 
@@ -250,16 +250,19 @@ const doTransaction = async (
     throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
   }
 
-  if (input.amount > wallet.balance && input.type === TransactionType.DEBIT) {
+  if (
+    input.amount > Number.parseFloat(wallet.balance) &&
+    input.type === TransactionType.DEBIT
+  ) {
     throw new TRPCError({ message: "Not enough balance", code: "BAD_REQUEST" });
   }
 
   let newBalance;
 
   if (input.type === TransactionType.CREDIT) {
-    newBalance = wallet.balance + input.amount;
+    newBalance = Number.parseFloat(wallet.balance) + input.amount;
   } else if (input.type === TransactionType.DEBIT) {
-    newBalance = wallet.balance - input.amount;
+    newBalance = Number.parseFloat(wallet.balance) - input.amount;
 
     if (input.internalWalletId) {
       const ownWallet = await db
@@ -283,6 +286,6 @@ const doTransaction = async (
 
   await db
     .update(wallets)
-    .set({ balance: newBalance })
+    .set({ balance: newBalance?.toString() })
     .where(eq(wallets.id, input.walletId));
 };

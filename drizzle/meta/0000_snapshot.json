@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "pg",
-  "id": "b8069f2b-7fd8-418a-9dd4-75604ff21f10",
+  "id": "287358c5-2211-4617-ad6f-f3f6f3746798",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "attachments": {
@@ -372,7 +372,7 @@
         },
         "amount": {
           "name": "amount",
-          "type": "real",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": true
         },
@@ -576,7 +576,7 @@
         },
         "balance": {
           "name": "balance",
-          "type": "real",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": true
         },
@@ -724,7 +724,7 @@
         },
         "balance": {
           "name": "balance",
-          "type": "real",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": true
         },
@@ -798,7 +798,7 @@
         },
         "balance": {
           "name": "balance",
-          "type": "real",
+          "type": "numeric",
           "primaryKey": false,
           "notNull": true
         },

@@ -5,7 +5,7 @@ import {
   uuid,
   timestamp,
   pgEnum,
-  real,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { wallets, recipients } from "./wallets";
 import { attachments } from "./attachments";
@@ -25,7 +25,7 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
-  amount: real("amount").notNull(),
+  amount: numeric("amount").notNull(),
   description: text("description"),
   walletId: uuid("wallet_id")
     .notNull()

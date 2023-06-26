@@ -94,7 +94,7 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
             defaultValues={{
               name: wallet.name,
               description: wallet.description ?? undefined,
-              balance: wallet.balance ?? undefined,
+              balance: Number.parseFloat(wallet.balance) ?? undefined,
               id: wallet.id,
             }}
             renderAfter={() => (

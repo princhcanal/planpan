@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS "transactions" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"date" timestamp DEFAULT now() NOT NULL,
-	"amount" real NOT NULL,
+	"amount" numeric NOT NULL,
 	"description" text,
 	"wallet_id" uuid NOT NULL,
 	"internal_wallet_id" uuid,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS "internalWallet" (
 	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"balance" real NOT NULL,
+	"balance" numeric NOT NULL,
 	"image" text
 );
 
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS "wallet" (
 	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"balance" real NOT NULL,
+	"balance" numeric NOT NULL,
 	"image" text
 );
 
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS "wallets" (
 	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"balance" real NOT NULL,
+	"balance" numeric NOT NULL,
 	"image" text
 );
 

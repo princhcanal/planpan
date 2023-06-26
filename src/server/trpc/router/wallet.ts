@@ -21,16 +21,18 @@ export const walletRouter = router({
       .then((res) => res[0]);
   }),
   create: protectedProcedure.input(wallet).mutation(({ ctx, input }) => {
-    return ctx.db
-      .insert(wallets)
-      .values({ ...input, userId: ctx.session.user.id });
+    return ctx.db.insert(wallets).values({
+      ...input,
+      balance: input.balance.toString(),
+      userId: ctx.session.user.id,
+    });
   }),
   edit: protectedProcedure
     .input(wallet.partial().merge(withId))
     .mutation(({ ctx, input }) => {
       return ctx.db
         .update(wallets)
-        .set(input)
+        .set({ ...input, balance: input.balance?.toString() })
         .where(
           and(eq(wallets.id, input.id), eq(wallets.userId, ctx.session.user.id))
         );

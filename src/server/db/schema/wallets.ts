@@ -6,7 +6,7 @@ import {
   uuid,
   timestamp,
   pgEnum,
-  real,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { transactions } from "./transactions";
@@ -20,7 +20,7 @@ export const wallets = pgTable("wallets", {
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
-  balance: real("balance").notNull(),
+  balance: numeric("balance").notNull(),
   image: text("image"),
 });
 

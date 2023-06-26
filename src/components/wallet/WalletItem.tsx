@@ -19,7 +19,7 @@ export const WalletItem: React.FC<WalletItemProps> = ({ wallet }) => {
       </div>
 
       <p className="text-3xl font-extrabold">
-        &#8369; <span>{numeral(wallet.balance).format("0,0")}</span>
+        &#8369; <span>{numeral(wallet.balance).format("0,0", Math.floor)}</span>
         <span className="text-lg">{numeral(wallet.balance).format(".00")}</span>
       </p>
 

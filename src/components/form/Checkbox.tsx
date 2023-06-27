@@ -38,7 +38,10 @@ export const Checkbox = React.forwardRef<
 
       <LabelPrimitive.Label
         htmlFor={field.name}
-        className="ml-3 cursor-pointer select-none text-sm font-medium text-gray-900 dark:text-gray-100"
+        className={cn(
+          "ml-3 cursor-pointer select-none text-sm font-medium text-gray-900 dark:text-gray-100",
+          { "cursor-not-allowed opacity-50": props.disabled }
+        )}
       >
         {text}
       </LabelPrimitive.Label>

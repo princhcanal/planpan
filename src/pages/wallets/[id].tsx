@@ -59,10 +59,11 @@ const WalletDetails: NextPage = () => {
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const transactionSchema = transaction.refine(
-    transactionRefine,
-    transactionRefineMessage
-  );
+  const transactionSchema = transaction.refine(transactionRefine, {
+    message: transactionRefineMessage,
+    path: ["internalWalletId", "recipientId"],
+  });
+
   const onSubmit = (data: z.infer<typeof transactionSchema>) => {
     if (wallet.data?.balance) {
       if (

@@ -23,7 +23,7 @@ export const wallets = pgTable("wallets", {
   image: text("image"),
 });
 
-export const transactionsWallet = alias(wallets, "wallet");
+export const transactionsWallet = alias(wallets, "wallets");
 export const transactionsInternalWallet = alias(wallets, "internalWallet");
 
 export const walletsRelations = relations(wallets, ({ one, many }) => ({

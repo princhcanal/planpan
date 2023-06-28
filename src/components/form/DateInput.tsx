@@ -5,17 +5,18 @@ import { useTsController } from "@ts-react/form";
 
 interface DateInputProps {
   label?: string;
+  defaultNow?: boolean;
 }
 
 import * as React from "react";
-import { addMilliseconds, format } from "date-fns";
+import { addHours, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Calendar } from "../ui/Calendar";
 import { Button } from "../ui/Button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover";
 
-export function DateInput({ label }: DateInputProps) {
+export function DateInput({ label, defaultNow }: DateInputProps) {
   const { field, error } = useTsController<string>();
 
   return (
@@ -40,7 +41,9 @@ export function DateInput({ label }: DateInputProps) {
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {field.value ? (
-              format(new Date(field.value), "PPP")
+              format(addHours(new Date(field.value), 8), "PPP")
+            ) : defaultNow ? (
+              format(new Date(), "PPP")
             ) : (
               <span>Pick a date</span>
             )}
@@ -52,7 +55,7 @@ export function DateInput({ label }: DateInputProps) {
             selected={field.value ? new Date(field.value) : undefined}
             onSelect={(d) => {
               if (d) {
-                field.onChange(d.toISOString());
+                field.onChange(addHours(d, 8).toISOString());
               }
             }}
             initialFocus

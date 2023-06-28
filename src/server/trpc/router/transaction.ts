@@ -3,11 +3,7 @@ import { type z } from "zod";
 import { transaction, transactionWithId, withId } from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
 import { TransactionType, transactions } from "../../db/schema/transactions";
-import {
-  wallets,
-  transactionsWallet,
-  transactionsInternalWallet,
-} from "../../db/schema/wallets";
+import { wallets, transactionsInternalWallet } from "../../db/schema/wallets";
 import { and, desc, eq, or } from "drizzle-orm";
 import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
@@ -72,8 +68,8 @@ export const transactionRouter = router({
             date: input.date ?? new Date().toISOString(),
           });
         } catch (e) {
-          tx.rollback();
           console.log(e);
+          tx.rollback();
         }
       });
     }),
@@ -89,19 +85,15 @@ export const transactionRouter = router({
           await tx
             .update(transactions)
             .set({
-              ...input,
+              name: input.name,
               amount: input.amount.toString(),
+              description: input.description,
               date: input.date ?? new Date().toLocaleDateString(),
             })
-            .where(
-              and(
-                eq(transactions.id, input.id),
-                eq(transactionsWallet.userId, ctx.session.user.id)
-              )
-            );
+            .where(eq(transactions.id, input.id));
         } catch (e) {
-          tx.rollback();
           console.log(e);
+          tx.rollback();
         }
       });
     }),
@@ -119,8 +111,8 @@ export const transactionRouter = router({
             .returning()
             .then((res) => res[0]);
         } catch (e) {
-          tx.rollback();
           console.log(e);
+          tx.rollback();
         }
       });
     }),

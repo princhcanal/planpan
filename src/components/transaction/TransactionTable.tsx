@@ -15,23 +15,24 @@ import Link from "next/link";
 import { mapEnumToLabelValuePair } from "../../utils";
 import { type LabelValuePair } from "../form/SelectInput";
 import { cn } from "../../lib/utils";
-import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import { addHours, format } from "date-fns";
 import { isBetween } from "../../utils/date";
 import type { RouterOutputs } from "../../utils/trpc";
+import { TransactionActions } from "./TransactionActions";
+import type { Wallet } from "../../pages/wallets/[id]";
 
 export type TransactionWithWallets =
   RouterOutputs["transaction"]["getTransactionsByWallet"][number];
 
 interface TransactionTableProps {
-  walletId: string;
-  wallets: LabelValuePair[];
+  wallet: Wallet;
+  walletsExcludingSelf: LabelValuePair[];
   transactions: TransactionWithWallets[];
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
-  walletId,
-  wallets,
+  wallet,
+  walletsExcludingSelf,
   transactions,
 }) => {
   const columns: ColumnDef<TransactionWithWallets>[] = [
@@ -93,7 +94,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
         if (
           isTransfer &&
-          row.original.wallet.id === walletId &&
+          row.original.wallet.id === wallet.id &&
           row.original.internalWallet
         ) {
           return (
@@ -122,11 +123,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       filterFn: (row, _id, value) => {
         const isTransfer = row.original.type === TransactionType.TRANSFER;
 
-        if (isTransfer && row.original.wallet.id === walletId) {
+        if (isTransfer && row.original.wallet.id === wallet.id) {
           return value.includes(row.original.internalWallet?.id);
         }
 
-        if (isTransfer && row.original.wallet.id !== walletId) {
+        if (isTransfer && row.original.wallet.id !== wallet.id) {
           return value.includes(row.original.wallet.id);
         }
       },
@@ -138,7 +139,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
       cell: ({ row }) => {
         const isExpense =
-          walletId === row.original.wallet.id &&
+          wallet.id === row.original.wallet.id &&
           row.original.type !== TransactionType.INCOME;
 
         return (
@@ -193,9 +194,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
 
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <TransactionDeleteDialog
+              <TransactionActions
                 transaction={row.original}
-                walletId={walletId}
+                wallet={wallet}
+                walletsExcludingSelf={walletsExcludingSelf}
               />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -217,7 +219,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         },
         {
           columnId: "transfer",
-          options: wallets,
+          options: walletsExcludingSelf,
           title: "Transferred To/From",
           icon: Send,
         },

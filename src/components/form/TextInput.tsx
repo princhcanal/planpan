@@ -6,6 +6,7 @@ import { inputClasses } from "../ui/Input";
 export interface TextInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  enumValues: unknown;
 }
 
 export const TextInput = ({
@@ -14,6 +15,8 @@ export const TextInput = ({
   label,
   ...props
 }: TextInputProps) => {
+  delete props.enumValues; // caused "React does not recognize the 'enumValues' prop on a DOM element"
+
   const { field, error } = useTsController<string>();
 
   return (

@@ -25,8 +25,8 @@ export const transactionRefine = (data: z.infer<typeof transaction>) =>
 export const transactionRefineMessage = "Required";
 
 export const transaction = z.object({
-  walletId: z.string().uuid(),
   type: transactionTypeSchema,
+  walletId: entitySelectSchema,
   internalWalletId: entitySelectSchema,
   name: z.string().min(1),
   amount: z.number().positive(),

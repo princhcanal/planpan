@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { type z } from "zod";
 import { Form } from "../../components/form/Form";
 import { Button } from "../../components/ui/Button";
-import { trpc } from "../../utils/trpc";
+import { type RouterOutputs, trpc } from "../../utils/trpc";
 import numeral from "numeral";
 import { mapEnumToLabelValuePair } from "../../utils";
 import { useForm } from "react-hook-form";
@@ -23,9 +23,11 @@ import {
 import { TransactionType } from "../../server/db/schema/transactions";
 import { TransactionTable } from "../../components/transaction/TransactionTable";
 import { type LabelValuePair } from "../../components/form/SelectInput";
-import { ArrowLeftRight, Minus, Plus } from "lucide-react";
+import { ArrowLeftRight, Minus, Plus, Send, Wallet } from "lucide-react";
 import { WalletActions } from "../../components/wallet/WalletActions";
 import { Spinner } from "../../components/ui/Spinner";
+
+export type Wallet = RouterOutputs["wallet"]["getAll"][number];
 
 const WalletDetails: NextPage = () => {
   const {
@@ -58,7 +60,7 @@ const WalletDetails: NextPage = () => {
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const onSubmit = (data: z.infer<typeof transaction>) => {
+  const onSubmit = (data: z.infer<typeof transactionSchema>) => {
     if (
       watchType === TransactionType.INCOME ||
       (wallet.data?.balance !== null &&
@@ -79,7 +81,6 @@ const WalletDetails: NextPage = () => {
   const defaultValues = {
     type: TransactionType.EXPENSE,
     walletId: wallet.data?.id,
-    date: new Date().toISOString(),
   };
 
   const watchType = form.watch("type");
@@ -193,10 +194,21 @@ const WalletDetails: NextPage = () => {
                 onSubmit={onSubmit}
                 props={{
                   walletId: {
-                    type: "hidden",
+                    label: "Source Account",
+                    placeholder: "Choose Wallet",
+                    options:
+                      wallets.data?.map((wallet) => ({
+                        label: wallet.name,
+                        value: wallet.id,
+                      })) ?? [],
+                    disabled: true,
                   },
                   type: {
-                    options: mapEnumToLabelValuePair(TransactionType),
+                    options: mapEnumToLabelValuePair(TransactionType, [
+                      Wallet,
+                      Send,
+                      ArrowLeftRight,
+                    ]),
                     defaultValue: TransactionType.EXPENSE,
                   },
                   name: {
@@ -204,7 +216,7 @@ const WalletDetails: NextPage = () => {
                     placeholder: "Jollibee",
                   },
                   internalWalletId: {
-                    label: "Transfer To",
+                    label: "Destination Account",
                     placeholder: "Choose Wallet",
                     options:
                       walletsExcludingSelf?.map((wallet) => ({
@@ -229,6 +241,7 @@ const WalletDetails: NextPage = () => {
                   },
                   date: {
                     label: "Date",
+                    defaultNow: true,
                   },
                 }}
                 defaultValues={defaultValues}
@@ -248,8 +261,8 @@ const WalletDetails: NextPage = () => {
 
         <TransactionTable
           transactions={transactionsData ?? []}
-          walletId={id as string}
-          wallets={walletFilterOptions}
+          wallet={wallet.data}
+          walletsExcludingSelf={walletFilterOptions}
         />
       </div>
     </div>

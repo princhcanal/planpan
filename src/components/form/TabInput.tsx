@@ -8,6 +8,7 @@ interface TabInputProps {
   defaultValue?: string;
   hidden?: boolean;
   errorMessage?: string;
+  disabled?: boolean;
 }
 
 export const TabInput = ({
@@ -15,23 +16,29 @@ export const TabInput = ({
   defaultValue,
   hidden,
   errorMessage,
+  disabled,
 }: TabInputProps) => {
   const { field, error } = useTsController<string>();
 
   return (
     <fieldset className={cn("mb-2", { hidden })}>
-      <Tabs defaultValue={defaultValue}>
+      <Tabs
+        defaultValue={defaultValue}
+        onValueChange={(val) => field.onChange(val)}
+        className={cn({ "cursor-not-allowed": disabled })}
+      >
         <TabsList className="w-full">
           {options.map((opt, i) => (
             <TabsTrigger
               className="w-full"
               value={opt.value}
               key={`${opt.label}-${i}`}
-              onClick={() => {
-                field.onChange(opt.value);
-              }}
+              disabled={disabled}
             >
-              {opt.label}
+              <div className="flex items-center">
+                {opt.icon && <opt.icon className="mr-2" size="15" />}
+                <span>{opt.label}</span>
+              </div>
             </TabsTrigger>
           ))}
         </TabsList>

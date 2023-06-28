@@ -2,10 +2,12 @@ import { Label } from "@radix-ui/react-label";
 import { useTsController } from "@ts-react/form";
 import classNames from "classnames";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/Select";
+import type { LucideIcon } from "lucide-react";
 
 export interface LabelValuePair<T = string> {
   label: string;
   value: T;
+  icon?: LucideIcon;
 }
 
 interface SelectInputProps {
@@ -15,6 +17,7 @@ interface SelectInputProps {
   defaultValue?: string;
   hidden?: boolean;
   errorMessage?: string;
+  disabled?: boolean;
 }
 
 export const SelectInput = ({
@@ -24,6 +27,7 @@ export const SelectInput = ({
   placeholder,
   hidden,
   errorMessage,
+  disabled,
 }: SelectInputProps) => {
   const { field, error } = useTsController<string>();
 
@@ -43,6 +47,7 @@ export const SelectInput = ({
         defaultValue={defaultValue}
         value={field.value ?? ""}
         onValueChange={(val) => field.onChange(val)}
+        disabled={disabled}
       >
         <SelectTrigger>
           {options.find((op) => op.value === field.value)?.label ?? placeholder}

@@ -156,7 +156,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
       filterFn: (row, _id, value) => {
         const amount =
-          row.original.type !== TransactionType.INCOME
+          row.original.type !== TransactionType.INCOME &&
+          row.original.wallet.id === wallet.id
             ? -row.original.amount
             : row.original.amount;
 

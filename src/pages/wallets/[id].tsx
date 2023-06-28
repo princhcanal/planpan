@@ -137,7 +137,7 @@ const WalletDetails: NextPage = () => {
 
   return wallet.data ? (
     <div>
-      <div className="mb-12 flex justify-between gap-8">
+      <div className="mb-12 flex flex-col justify-between gap-8 sm:flex-row">
         <div>
           <p className="text-sm text-muted-foreground">Balance</p>
           <h1 className="mb-2 text-4xl font-extrabold text-highlight">

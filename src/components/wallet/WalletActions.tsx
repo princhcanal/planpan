@@ -111,14 +111,14 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
         onOpenChange={setIsDeleteDialogOpen}
       >
         <AlertDialogTrigger asChild>
-          <Button variant="secondary" icon={Trash}>
+          <Button variant="secondary" className="text-destructive" icon={Trash}>
             Delete
           </Button>
         </AlertDialogTrigger>
 
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Walelt?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Wallet?</AlertDialogTitle>
             Are you sure you want to delete this wallet? This action cannot be
             undone
             <AlertDialogDescription></AlertDialogDescription>

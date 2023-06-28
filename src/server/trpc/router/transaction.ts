@@ -53,7 +53,7 @@ export const transactionRouter = router({
           transactionsInternalWallet,
           eq(transactionsInternalWallet.id, transactions.internalWalletId)
         )
-        .orderBy(desc(transactions.date));
+        .orderBy(desc(transactions.date), desc(transactions.createdAt));
     }),
   createTransaction: protectedProcedure
     .input(transaction)
@@ -66,6 +66,10 @@ export const transactionRouter = router({
             ...input,
             amount: input.amount.toString(),
             date: input.date ?? new Date().toISOString(),
+            description:
+              input.description && input.description.length > 0
+                ? input.description
+                : null,
           });
         } catch (e) {
           console.log(e);
@@ -87,8 +91,11 @@ export const transactionRouter = router({
             .set({
               name: input.name,
               amount: input.amount.toString(),
-              description: input.description,
               date: input.date ?? new Date().toLocaleDateString(),
+              description:
+                input.description && input.description.length > 0
+                  ? input.description
+                  : null,
             })
             .where(eq(transactions.id, input.id));
         } catch (e) {

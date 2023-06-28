@@ -32,9 +32,9 @@ export const transactions = pgTable("transactions", {
   description: text("description"),
   walletId: uuid("wallet_id")
     .notNull()
-    .references(() => wallets.id, { onDelete: "cascade" }),
+    .references(() => wallets.id),
   internalWalletId: uuid("internal_wallet_id").references(() => wallets.id, {
-    onDelete: "cascade",
+    onDelete: "set null",
   }),
   image: text("image"),
   type: transactionTypeEnum("type").notNull(),

@@ -123,13 +123,13 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_wallet_id_wallets_id_fk" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_wallet_id_wallets_id_fk" FOREIGN KEY ("wallet_id") REFERENCES "wallets"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_internal_wallet_id_wallets_id_fk" FOREIGN KEY ("internal_wallet_id") REFERENCES "wallets"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "transactions" ADD CONSTRAINT "transactions_internal_wallet_id_wallets_id_fk" FOREIGN KEY ("internal_wallet_id") REFERENCES "wallets"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "pg",
-  "id": "35d8c563-4615-47d4-b980-92e9cdab395e",
+  "id": "a407bed8-a444-47c1-97da-5bb0d8eed102",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "attachments": {
@@ -425,7 +425,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
         "transactions_internal_wallet_id_wallets_id_fk": {
@@ -438,7 +438,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

@@ -62,8 +62,21 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
     },
     {
+      header: "Name",
+      accessorKey: "name",
+    },
+    {
       header: "Description",
-      accessorKey: "description",
+      id: "description",
+      cell: ({ row }) => {
+        return (
+          row.original.description ?? (
+            <p className="text-muted-foreground">n/a</p>
+          )
+        );
+      },
+      filterFn: (row, _id, value) =>
+        row.original.description?.includes(value) ?? false,
     },
     {
       header: "Type",
@@ -71,19 +84,15 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       filterFn: (row, id, value) => value.includes(row.getValue(id)),
     },
     {
-      id: "sent",
+      id: "transfer",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Sent To/From" />
+        <DataTableColumnHeader column={column} title="Transferred To/From" />
       ),
       cell: ({ row }) => {
-        const isDebit = row.original.type === TransactionType.DEBIT;
-
-        if (row.original.recipient) {
-          return <span>{row.original.recipient.name}</span>;
-        }
+        const isTransfer = row.original.type === TransactionType.TRANSFER;
 
         if (
-          isDebit &&
+          isTransfer &&
           row.original.wallet.id === walletId &&
           row.original.internalWallet
         ) {
@@ -97,28 +106,28 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           );
         }
 
-        return (
-          <Link
-            href={`/wallets/${row.original.wallet.id}`}
-            className="underline"
-          >
-            {row.original.wallet.name}
-          </Link>
-        );
-      },
-      filterFn: (row, _id, value) => {
-        const isDebit = row.original.type === TransactionType.DEBIT;
-
-        if (isDebit || row.original.wallet.id === walletId) {
-          return value.includes(
-            row.original.recipient?.id ?? row.original.internalWallet?.id
+        if (isTransfer) {
+          return (
+            <Link
+              href={`/wallets/${row.original.wallet.id}`}
+              className="underline"
+            >
+              {row.original.wallet.name}
+            </Link>
           );
         }
 
-        if (!isDebit && row.original.wallet.id !== walletId) {
-          return value.includes(
-            row.original.recipient?.id ?? row.original.wallet.id
-          );
+        return <p className="text-muted-foreground">n/a</p>;
+      },
+      filterFn: (row, _id, value) => {
+        const isTransfer = row.original.type === TransactionType.TRANSFER;
+
+        if (isTransfer && row.original.wallet.id === walletId) {
+          return value.includes(row.original.internalWallet?.id);
+        }
+
+        if (isTransfer && row.original.wallet.id !== walletId) {
+          return value.includes(row.original.wallet.id);
         }
       },
     },
@@ -128,25 +137,25 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         return <p className="text-right">Amount</p>;
       },
       cell: ({ row }) => {
-        const isOutgoingTransaction =
+        const isExpense =
           walletId === row.original.wallet.id &&
-          row.original.type === TransactionType.DEBIT;
+          row.original.type !== TransactionType.INCOME;
 
         return (
           <p
             className={cn("text-right", {
-              "text-destructive": isOutgoingTransaction,
-              "text-success": !isOutgoingTransaction,
+              "text-destructive": isExpense,
+              "text-success": !isExpense,
             })}
           >
-            {isOutgoingTransaction ? <span>- </span> : <span>+ </span>}
+            {isExpense ? <span>- </span> : <span>+ </span>}
             <span>&#8369; {numeral(row.original.amount).format("0,0.00")}</span>
           </p>
         );
       },
       filterFn: (row, _id, value) => {
         const amount =
-          row.original.type === TransactionType.DEBIT
+          row.original.type === TransactionType.EXPENSE
             ? -row.original.amount
             : row.original.amount;
 
@@ -207,13 +216,17 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           icon: ArrowRightLeft,
         },
         {
-          columnId: "sent",
+          columnId: "transfer",
           options: wallets,
-          title: "Sent To/From",
+          title: "Transferred To/From",
           icon: Send,
         },
       ]}
       searchFilters={[
+        {
+          columnId: "name",
+          placeholder: "Search Name",
+        },
         {
           columnId: "description",
           placeholder: "Search Description",

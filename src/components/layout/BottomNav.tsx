@@ -1,4 +1,4 @@
-import { BarChartBig, CreditCard, Users } from "lucide-react";
+import { BarChartBig, CreditCard } from "lucide-react";
 import { BottomNavLink } from "./BottomNavLink";
 import { ThemePicker } from "./ThemePicker";
 
@@ -10,9 +10,6 @@ export const BottomNav = () => {
       </BottomNavLink>
       <BottomNavLink href="/wallets" icon={CreditCard}>
         Wallets
-      </BottomNavLink>
-      <BottomNavLink href="/recipients" icon={Users}>
-        Recipients
       </BottomNavLink>
 
       <ThemePicker />

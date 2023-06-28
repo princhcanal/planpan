@@ -43,7 +43,7 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Button
           variant="outline"
           size="sm"
-          className="w-52 whitespace-nowrap border-dashed sm:w-auto lg:h-8"
+          className="w-52 whitespace-nowrap border-dashed text-muted-foreground sm:w-auto lg:h-8"
         >
           {props.icon && <props.icon className="mr-2 h-4 w-4" />}
           {title}

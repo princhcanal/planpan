@@ -1,11 +1,5 @@
 DO $$ BEGIN
- CREATE TYPE "transaction_type" AS ENUM('DEBIT', 'CREDIT');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
- CREATE TYPE "recipient_type" AS ENUM('BILLER', 'PEER');
+ CREATE TYPE "transaction_type" AS ENUM('EXPENSE', 'INCOME', 'TRANSFER');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -65,23 +59,12 @@ CREATE TABLE IF NOT EXISTS "transactions" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"date" timestamp DEFAULT now() NOT NULL,
 	"amount" numeric NOT NULL,
+	"name" text NOT NULL,
 	"description" text,
 	"wallet_id" uuid NOT NULL,
 	"internal_wallet_id" uuid,
-	"recipient_id" uuid,
 	"image" text,
 	"type" transaction_type NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "recipients" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"image" text,
-	"type" recipient_type NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "internalWallet" (
@@ -93,17 +76,6 @@ CREATE TABLE IF NOT EXISTS "internalWallet" (
 	"description" text,
 	"balance" numeric NOT NULL,
 	"image" text
-);
-
-CREATE TABLE IF NOT EXISTS "recipient" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"image" text,
-	"type" recipient_type NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "wallet" (
@@ -163,25 +135,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
- ALTER TABLE "transactions" ADD CONSTRAINT "transactions_recipient_id_recipients_id_fk" FOREIGN KEY ("recipient_id") REFERENCES "recipients"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
- ALTER TABLE "recipients" ADD CONSTRAINT "recipients_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
  ALTER TABLE "internalWallet" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
- ALTER TABLE "recipient" ADD CONSTRAINT "recipients_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -23,7 +23,7 @@ import {
 import { TransactionType } from "../../server/db/schema/transactions";
 import { TransactionTable } from "../../components/transaction/TransactionTable";
 import { type LabelValuePair } from "../../components/form/SelectInput";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Minus, Plus } from "lucide-react";
 import { WalletActions } from "../../components/wallet/WalletActions";
 import { Spinner } from "../../components/ui/Spinner";
 
@@ -36,7 +36,6 @@ const WalletDetails: NextPage = () => {
   const walletsExcludingSelf = wallets.data?.filter(
     (wallet) => wallet.id !== id
   );
-  const recipients = trpc.recipient.getAll.useQuery();
   const wallet = trpc.wallet.getOne.useQuery(
     { id: id as string },
     { enabled: !!id }
@@ -59,43 +58,39 @@ const WalletDetails: NextPage = () => {
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const transactionSchema = transaction.refine(transactionRefine, {
-    message: transactionRefineMessage,
-    path: ["internalWalletId", "recipientId"],
-  });
-
-  const onSubmit = (data: z.infer<typeof transactionSchema>) => {
-    if (wallet.data?.balance) {
-      if (
-        watchAmount > Number.parseFloat(wallet.data.balance) &&
-        watchType === TransactionType.DEBIT
-      ) {
-      } else {
-        createTransaction.mutate(data);
-      }
+  const onSubmit = (data: z.infer<typeof transaction>) => {
+    if (
+      watchType === TransactionType.INCOME ||
+      (wallet.data?.balance !== null &&
+        wallet.data?.balance !== undefined &&
+        watchAmount <= Number.parseFloat(wallet.data.balance))
+    ) {
+      createTransaction.mutate(data);
     }
   };
+
+  const transactionSchema = transaction.refine(transactionRefine, {
+    message: transactionRefineMessage,
+    path: ["internalWalletId"],
+  });
 
   const form = useForm<z.infer<typeof transactionSchema>>();
 
   const defaultValues = {
-    type: TransactionType.DEBIT,
+    type: TransactionType.EXPENSE,
     walletId: wallet.data?.id,
-    sendToInternalWallet: false,
+    date: new Date().toISOString(),
   };
 
   const watchType = form.watch("type");
-  const watchSendToInternalWallet = form.watch("sendToInternalWallet");
   const watchAmount = form.watch("amount");
-  const watchRecipientId = form.watch("recipientId");
   const watchInternalWalletId = form.watch("internalWalletId");
 
   const [amountErrorMessage, setAmountErrorMessage] = useState("");
   const [walletErrorMessage, setWalletErrorMessage] = useState("");
 
   useEffect(() => {
-    if (watchType === TransactionType.CREDIT) {
-      form.resetField("sendToInternalWallet", { defaultValue: false });
+    if (watchType !== TransactionType.TRANSFER) {
       form.resetField("internalWalletId", {
         defaultValue: undefined,
       });
@@ -103,42 +98,30 @@ const WalletDetails: NextPage = () => {
   }, [watchType, form]);
 
   useEffect(() => {
-    form.resetField("recipientId", {
-      defaultValue: undefined,
-    });
-    form.resetField("internalWalletId", {
-      defaultValue: undefined,
-    });
-  }, [watchSendToInternalWallet, form]);
-
-  useEffect(() => {
-    if (wallet.data?.balance !== null && wallet.data?.balance !== undefined) {
-      if (
-        watchAmount > Number.parseFloat(wallet.data.balance) &&
-        watchType === TransactionType.DEBIT
-      ) {
-        setAmountErrorMessage(
-          `Not enough balance (₱ ${numeral(wallet.data.balance).format(
-            "0,0.00"
-          )})`
-        );
-      } else {
-        setAmountErrorMessage("");
-      }
-    }
-  }, [watchAmount, watchType, form, wallet.data?.balance]);
-
-  useEffect(() => {
-    if (!!watchRecipientId || !!watchInternalWalletId) {
+    if (
+      (watchType === TransactionType.TRANSFER && !!watchInternalWalletId) ||
+      watchType !== TransactionType.TRANSFER
+    ) {
       setWalletErrorMessage("");
     }
-  }, [watchRecipientId, watchInternalWalletId]);
+  }, [watchInternalWalletId, watchType]);
 
-  const setWalletIdErrors = () => {
-    if (!watchRecipientId && !watchInternalWalletId) {
-      setWalletErrorMessage("Must choose either Wallet or Recipient");
+  useEffect(() => {
+    if (
+      wallet.data?.balance !== null &&
+      wallet.data?.balance !== undefined &&
+      watchAmount > Number.parseFloat(wallet.data.balance) &&
+      watchType !== TransactionType.INCOME
+    ) {
+      setAmountErrorMessage(
+        `Not enough balance (₱ ${numeral(wallet.data.balance).format(
+          "0,0.00"
+        )})`
+      );
+    } else {
+      setAmountErrorMessage("");
     }
-  };
+  }, [watchAmount, watchType, form, wallet.data?.balance]);
 
   const resetErrorMessages = () => {
     setWalletErrorMessage("");
@@ -146,12 +129,7 @@ const WalletDetails: NextPage = () => {
   };
 
   const walletFilterOptions: LabelValuePair[] =
-    wallets.data?.map((g) => ({
-      label: g.name,
-      value: g.id,
-    })) ?? [];
-  const externalWalletFilterOptions: LabelValuePair[] =
-    recipients.data?.map((g) => ({
+    walletsExcludingSelf?.map((g) => ({
       label: g.name,
       value: g.id,
     })) ?? [];
@@ -219,33 +197,22 @@ const WalletDetails: NextPage = () => {
                   },
                   type: {
                     options: mapEnumToLabelValuePair(TransactionType),
-                    label: "Type",
+                    defaultValue: TransactionType.EXPENSE,
+                  },
+                  name: {
+                    label: "Name",
+                    placeholder: "Jollibee",
                   },
                   internalWalletId: {
-                    label: "Send To",
+                    label: "Transfer To",
                     placeholder: "Choose Wallet",
                     options:
                       walletsExcludingSelf?.map((wallet) => ({
                         label: wallet.name,
                         value: wallet.id,
                       })) ?? [],
-                    hidden: !watchSendToInternalWallet,
+                    hidden: watchType !== TransactionType.TRANSFER,
                     errorMessage: walletErrorMessage,
-                  },
-                  recipientId: {
-                    label: "Send To",
-                    placeholder: "Choose Peer/Biller",
-                    options:
-                      recipients.data?.map((wallet) => ({
-                        label: wallet.name,
-                        value: wallet.id,
-                      })) ?? [],
-                    hidden: watchSendToInternalWallet ?? false,
-                    errorMessage: walletErrorMessage,
-                  },
-                  sendToInternalWallet: {
-                    text: "Send to wallet?",
-                    disabled: watchType === TransactionType.CREDIT,
                   },
                   amount: {
                     placeholder: "5,000",
@@ -253,9 +220,10 @@ const WalletDetails: NextPage = () => {
                     max: 1_000_000_000_000,
                     errorMessage: amountErrorMessage,
                     currency: "₱",
+                    sign: watchType === TransactionType.INCOME ? Plus : Minus,
                   },
                   description: {
-                    placeholder: "Groceries",
+                    placeholder: "Birthday Celebration",
                     label: "Description",
                     type: "textarea",
                   },
@@ -269,9 +237,6 @@ const WalletDetails: NextPage = () => {
                     className="mt-4 w-full"
                     isLoading={createTransaction.isLoading}
                     type="submit"
-                    onClick={() => {
-                      setWalletIdErrors();
-                    }}
                   >
                     Save
                   </Button>
@@ -284,7 +249,7 @@ const WalletDetails: NextPage = () => {
         <TransactionTable
           transactions={transactionsData ?? []}
           walletId={id as string}
-          wallets={walletFilterOptions.concat(externalWalletFilterOptions)}
+          wallets={walletFilterOptions}
         />
       </div>
     </div>

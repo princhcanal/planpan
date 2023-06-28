@@ -7,17 +7,19 @@ import {
   pgEnum,
   numeric,
 } from "drizzle-orm/pg-core";
-import { wallets, recipients } from "./wallets";
+import { wallets } from "./wallets";
 import { attachments } from "./attachments";
 
 export const transactionTypeEnum = pgEnum("transaction_type", [
-  "DEBIT",
-  "CREDIT",
+  "EXPENSE",
+  "INCOME",
+  "TRANSFER",
 ]);
 
 export enum TransactionType {
-  CREDIT = "CREDIT",
-  DEBIT = "DEBIT",
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE",
+  TRANSFER = "TRANSFER",
 }
 
 export const transactions = pgTable("transactions", {
@@ -26,14 +28,12 @@ export const transactions = pgTable("transactions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
   amount: numeric("amount").notNull(),
+  name: text("name").notNull(),
   description: text("description"),
   walletId: uuid("wallet_id")
     .notNull()
     .references(() => wallets.id, { onDelete: "cascade" }),
   internalWalletId: uuid("internal_wallet_id").references(() => wallets.id, {
-    onDelete: "cascade",
-  }),
-  recipientId: uuid("recipient_id").references(() => recipients.id, {
     onDelete: "cascade",
   }),
   image: text("image"),
@@ -50,10 +50,6 @@ export const transactionsRelations = relations(
     internalWallet: one(wallets, {
       fields: [transactions.internalWalletId],
       references: [wallets.id],
-    }),
-    recipient: one(recipients, {
-      fields: [transactions.recipientId],
-      references: [recipients.id],
     }),
     attachments: many(attachments),
   })

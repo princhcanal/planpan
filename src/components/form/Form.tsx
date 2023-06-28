@@ -5,19 +5,8 @@ import { DateInput } from "./DateInput";
 import { NumberInput } from "./NumberInput";
 import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
-import { RecipientType } from "../../server/db/schema/wallets";
 import { TransactionType } from "../../server/db/schema/transactions";
-
-export const recipientTypeSchema = createUniqueFieldSchema(
-  z.enum([RecipientType.BILLER, RecipientType.PEER]),
-  "externalWalletTypeSchema"
-);
-
-export const recipientSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  type: recipientTypeSchema,
-});
+import { TabInput } from "./TabInput";
 
 export const dateStringSchema = createUniqueFieldSchema(
   z.string().datetime(),
@@ -30,7 +19,11 @@ export const optionalDateStringSchema = createUniqueFieldSchema(
 );
 
 export const transactionTypeSchema = createUniqueFieldSchema(
-  z.enum([TransactionType.DEBIT, TransactionType.CREDIT]),
+  z.enum([
+    TransactionType.EXPENSE,
+    TransactionType.INCOME,
+    TransactionType.TRANSFER,
+  ]),
   "transactionTypeSchema"
 );
 
@@ -43,8 +36,7 @@ const mapping = [
   [z.string(), TextInput] as const,
   [dateStringSchema, DateInput] as const,
   [optionalDateStringSchema, DateInput] as const,
-  [recipientTypeSchema, SelectInput] as const,
-  [transactionTypeSchema, SelectInput] as const,
+  [transactionTypeSchema, TabInput] as const,
   [entitySelectSchema, SelectInput] as const,
   [z.number(), NumberInput] as const,
   [z.boolean(), Checkbox] as const,

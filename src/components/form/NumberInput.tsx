@@ -3,6 +3,8 @@ import { NumericFormat } from "react-number-format";
 import numeral from "numeral";
 import { Label } from "@radix-ui/react-label";
 import { inputClasses } from "../ui/Input";
+import { cn } from "../../lib/utils";
+import { Plus, type LucideIcon, Minus } from "lucide-react";
 
 export interface NumberInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -11,6 +13,7 @@ export interface NumberInputProps
   label?: string;
   errorMessage?: string;
   currency?: string;
+  sign?: LucideIcon;
 }
 
 export const NumberInput = ({
@@ -21,6 +24,7 @@ export const NumberInput = ({
   min,
   errorMessage,
   currency,
+  ...props
 }: NumberInputProps) => {
   const { field, error } = useTsController<number>();
 
@@ -36,7 +40,27 @@ export const NumberInput = ({
       </div>
 
       <div className="flex items-center gap-2">
-        {currency && <span className="text-2xl font-semibold">{currency}</span>}
+        <div className="flex items-center gap-1">
+          {props.sign && (
+            <props.sign
+              className={cn("font-semibold", {
+                "text-success": props.sign === Plus,
+                "text-destructive": props.sign === Minus,
+              })}
+              size="15"
+            />
+          )}
+          {currency && (
+            <span
+              className={cn("text-2xl font-semibold", {
+                "text-success": props.sign === Plus,
+                "text-destructive": props.sign === Minus,
+              })}
+            >
+              {currency}
+            </span>
+          )}
+        </div>
         <NumericFormat
           id={field.name}
           value={field.value ? field.value : ""}

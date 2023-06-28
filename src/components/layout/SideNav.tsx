@@ -1,4 +1,4 @@
-import { BarChartBig, CreditCard, Users } from "lucide-react";
+import { BarChartBig, CreditCard } from "lucide-react";
 import { SideNavLink } from "./SideNavLink";
 import { ThemePicker } from "./ThemePicker";
 
@@ -15,9 +15,6 @@ export const SideNav = () => {
         </SideNavLink>
         <SideNavLink href="/wallets" icon={CreditCard}>
           Wallets
-        </SideNavLink>
-        <SideNavLink href="/recipients" icon={Users}>
-          Recipients
         </SideNavLink>
       </div>
 

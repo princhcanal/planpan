@@ -1,21 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { type z } from "zod";
-import {
-  transaction,
-  transactionRefine,
-  transactionRefineMessage,
-  transactionWithId,
-  withId,
-} from "../../../types/zod";
+import { transaction, transactionWithId, withId } from "../../../types/zod";
 import { protectedProcedure, router } from "../trpc";
 import { TransactionType, transactions } from "../../db/schema/transactions";
 import {
   wallets,
-  transactionsRecipient,
   transactionsWallet,
   transactionsInternalWallet,
 } from "../../db/schema/wallets";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 export const transactionRouter = router({
@@ -33,13 +26,10 @@ export const transactionRouter = router({
         .select({
           id: transactions.id,
           date: transactions.date,
+          name: transactions.name,
           amount: transactions.amount,
           description: transactions.description,
-          type: sql`CASE 
-                      WHEN "transactions"."type" = 'DEBIT' AND "wallets"."id" != ${input.id} THEN 'CREDIT'
-                      WHEN "transactions"."type" = 'DEBIT' AND "wallets"."id" = ${input.id} THEN 'DEBIT'
-                      ELSE 'CREDIT'
-                    END "type"`,
+          type: transactions.type,
           wallet: {
             id: wallets.id,
             name: wallets.name,
@@ -47,10 +37,6 @@ export const transactionRouter = router({
           internalWallet: {
             id: transactionsInternalWallet.id,
             name: transactionsInternalWallet.name,
-          },
-          recipient: {
-            id: transactionsRecipient.id,
-            name: transactionsRecipient.name,
           },
         })
         .from(transactions)
@@ -71,19 +57,11 @@ export const transactionRouter = router({
           transactionsInternalWallet,
           eq(transactionsInternalWallet.id, transactions.internalWalletId)
         )
-        .leftJoin(
-          transactionsRecipient,
-          eq(transactionsRecipient.id, transactions.recipientId)
-        )
         .orderBy(desc(transactions.date));
     }),
   createTransaction: protectedProcedure
-    .input(transaction.refine(transactionRefine, transactionRefineMessage))
+    .input(transaction)
     .mutation(async ({ ctx, input }) => {
-      preValidate(input);
-
-      delete input.sendToInternalWallet;
-
       await ctx.db.transaction(async (tx) => {
         try {
           await doTransaction(tx, ctx.session.user.id, input);
@@ -100,14 +78,8 @@ export const transactionRouter = router({
       });
     }),
   editTransaction: protectedProcedure
-    .input(
-      transactionWithId.refine(transactionRefine, transactionRefineMessage)
-    )
+    .input(transactionWithId)
     .mutation(async ({ ctx, input }) => {
-      preValidate(input);
-
-      delete input.sendToInternalWallet;
-
       await ctx.db.transaction(async (tx) => {
         try {
           // reset balances then edit transaction
@@ -134,9 +106,7 @@ export const transactionRouter = router({
       });
     }),
   deleteTransaction: protectedProcedure
-    .input(
-      transactionWithId.refine(transactionRefine, transactionRefineMessage)
-    )
+    .input(transactionWithId)
     .mutation(async ({ ctx, input }) => {
       await ctx.db.transaction(async (tx) => {
         try {
@@ -155,22 +125,6 @@ export const transactionRouter = router({
       });
     }),
 });
-
-const preValidate = (input: z.infer<typeof transaction>) => {
-  if (input.internalWalletId && input.recipientId) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Only provide either Wallet or Recipient",
-    });
-  }
-
-  if (!input.internalWalletId && !input.recipientId) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Either Wallet or Recipient required",
-    });
-  }
-};
 
 const resetBalances = async (
   db: PostgresJsDatabase,
@@ -200,10 +154,10 @@ const resetBalances = async (
 
   let newBalance;
 
-  if (input.type === TransactionType.CREDIT) {
+  if (input.type === TransactionType.INCOME) {
     newBalance =
       Number.parseFloat(wallet.balance) - Number.parseFloat(transaction.amount);
-  } else if (input.type === TransactionType.DEBIT) {
+  } else {
     newBalance =
       Number.parseFloat(wallet.balance) + Number.parseFloat(transaction.amount);
 
@@ -252,16 +206,16 @@ const doTransaction = async (
 
   if (
     input.amount > Number.parseFloat(wallet.balance) &&
-    input.type === TransactionType.DEBIT
+    input.type !== TransactionType.INCOME
   ) {
     throw new TRPCError({ message: "Not enough balance", code: "BAD_REQUEST" });
   }
 
   let newBalance;
 
-  if (input.type === TransactionType.CREDIT) {
+  if (input.type === TransactionType.INCOME) {
     newBalance = Number.parseFloat(wallet.balance) + input.amount;
-  } else if (input.type === TransactionType.DEBIT) {
+  } else {
     newBalance = Number.parseFloat(wallet.balance) - input.amount;
 
     if (input.internalWalletId) {
@@ -275,11 +229,12 @@ const doTransaction = async (
         throw new TRPCError({ message: "Wallet not found", code: "NOT_FOUND" });
       }
 
-      const ownWalletNewBalance = ownWallet.balance + input.amount;
+      const ownWalletNewBalance =
+        Number.parseFloat(ownWallet.balance) + input.amount;
 
       await db
         .update(wallets)
-        .set({ balance: ownWalletNewBalance })
+        .set({ balance: ownWalletNewBalance.toString() })
         .where(eq(wallets.id, ownWallet.id));
     }
   }

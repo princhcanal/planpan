@@ -1,5 +1,5 @@
 import { db } from "./index";
-import { RecipientType, recipients, wallets } from "./schema/wallets";
+import { wallets } from "./schema/wallets";
 import { TransactionType, transactions } from "./schema/transactions";
 
 export const addSeedData = async (userId: string) => {
@@ -27,38 +27,19 @@ export const addSeedData = async (userId: string) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .then((res) => res[0]!);
 
-  const mamaSavingsAccount = await db
-    .insert(recipients)
-    .values({
-      name: "Mama's Metrobank Savings Account",
-      userId,
-      description: "Mama's Main Savings Account",
-      type: RecipientType.PEER,
-    })
-    .returning()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    .then((res) => res[0]!);
-
-  await db.insert(recipients).values({
-    name: "PLDT Home",
-    userId,
-    description: "Account No. 123456789",
-    type: RecipientType.BILLER,
-  });
-
   await db.insert(transactions).values({
+    name: "Test Fund Transfer",
     description: "Fund Transfer",
     amount: "5000",
-    type: TransactionType.DEBIT,
+    type: TransactionType.TRANSFER,
     walletId: bpiSavingsAccount.id,
     internalWalletId: metrobankSavingsAccount.id,
   });
 
   await db.insert(transactions).values({
-    description: "Groceries",
+    name: "Groceries",
     amount: "5000",
-    type: TransactionType.DEBIT,
+    type: TransactionType.EXPENSE,
     walletId: bpiSavingsAccount.id,
-    recipientId: mamaSavingsAccount.id,
   });
 };

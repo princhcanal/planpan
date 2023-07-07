@@ -6,35 +6,29 @@ import { TransactionType, transactions } from "../../db/schema/transactions";
 import { wallets, transactionsInternalWallet } from "../../db/schema/wallets";
 import { and, desc, eq, or } from "drizzle-orm";
 import { type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { RouterOutputs } from "../../../utils/trpc";
+
+export type TransactionWithWallets =
+  RouterOutputs["transaction"]["getAllTransactions"][number];
 
 export const transactionRouter = router({
   getAllTransactions: protectedProcedure.query(({ ctx }) => {
     return ctx.db
       .select()
       .from(transactions)
-      .innerJoin(wallets, eq(transactions.walletId, wallets.id))
-      .where(eq(wallets.userId, ctx.session.user.id));
+      .where(eq(wallets.userId, ctx.session.user.id))
+      .innerJoin(wallets, eq(wallets.id, transactions.walletId))
+      .leftJoin(
+        transactionsInternalWallet,
+        eq(transactionsInternalWallet.id, transactions.internalWalletId)
+      )
+      .orderBy(desc(transactions.date), desc(transactions.createdAt));
   }),
   getTransactionsByWallet: protectedProcedure
     .input(withId)
     .query(async ({ ctx, input }) => {
       return ctx.db
-        .select({
-          id: transactions.id,
-          date: transactions.date,
-          name: transactions.name,
-          amount: transactions.amount,
-          description: transactions.description,
-          type: transactions.type,
-          wallet: {
-            id: wallets.id,
-            name: wallets.name,
-          },
-          internalWallet: {
-            id: transactionsInternalWallet.id,
-            name: transactionsInternalWallet.name,
-          },
-        })
+        .select()
         .from(transactions)
         .where(
           or(

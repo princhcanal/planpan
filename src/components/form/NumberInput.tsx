@@ -41,7 +41,7 @@ export const NumberInput = ({
 
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
-          {props.sign && (
+          {!!props.sign && (
             <props.sign
               className={cn("font-semibold", {
                 "text-success": props.sign === Plus,
@@ -53,6 +53,7 @@ export const NumberInput = ({
           {currency && (
             <span
               className={cn("text-2xl font-semibold", {
+                "text-muted-foreground": props.sign === undefined,
                 "text-success": props.sign === Plus,
                 "text-destructive": props.sign === Minus,
               })}

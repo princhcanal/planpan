@@ -1,6 +1,7 @@
-import { BarChartBig, CreditCard } from "lucide-react";
+import { BarChartBig, CreditCard, LogOut } from "lucide-react";
 import { SideNavLink } from "./SideNavLink";
 import { ThemePicker } from "./ThemePicker";
+import { Button } from "../ui/Button";
 
 export const SideNav = () => {
   return (
@@ -19,6 +20,12 @@ export const SideNav = () => {
       </div>
 
       <div className="self-end">
+        <Button
+          variant="ghost"
+          className="text-background dark:text-foreground"
+        >
+          <LogOut />
+        </Button>
         <ThemePicker />
       </div>
     </div>

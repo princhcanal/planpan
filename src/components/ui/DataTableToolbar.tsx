@@ -17,6 +17,7 @@ interface DataTableToolbarProps<TData> {
   searchFilters?: SearchFilter[];
   dateFilter?: DateFilter;
   numberFilter?: NumberFilter;
+  hiddenColumnIds?: string[];
 }
 
 export interface DataTableFilter {
@@ -52,6 +53,7 @@ export function DataTableToolbar<TData>({
   searchFilters,
   dateFilter,
   numberFilter,
+  hiddenColumnIds,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getPreFilteredRowModel().rows.length >
@@ -110,7 +112,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
 
-      <DataTableViewOptions table={table} />
+      <DataTableViewOptions table={table} hiddenColumnIds={hiddenColumnIds} />
     </div>
   );
 }

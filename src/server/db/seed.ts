@@ -42,4 +42,11 @@ export const addSeedData = async (userId: string) => {
     type: TransactionType.EXPENSE,
     walletId: bpiSavingsAccount.id,
   });
+
+  await db.insert(transactions).values({
+    name: "Salary",
+    amount: "50000",
+    type: TransactionType.INCOME,
+    walletId: metrobankSavingsAccount.id,
+  });
 };

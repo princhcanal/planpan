@@ -18,7 +18,7 @@ import {
   TableCell,
   Table,
 } from "../ui/Table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DataTablePagination } from "./DataTablePagination";
 import {
   DataTableToolbar,
@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   searchFilters?: SearchFilter[];
   dateFilter?: DateFilter;
   numberFilter?: NumberFilter;
+  hiddenColumnIds?: string[];
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +45,7 @@ export function DataTable<TData, TValue>({
   searchFilters,
   dateFilter,
   numberFilter,
+  hiddenColumnIds,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -62,6 +64,15 @@ export function DataTable<TData, TValue>({
     state: { sorting, columnFilters, columnVisibility },
   });
 
+  useEffect(() => {
+    if (hiddenColumnIds) {
+      table
+        .getAllColumns()
+        .filter((c) => hiddenColumnIds.includes(c.id))
+        .forEach((c) => c.toggleVisibility(false));
+    }
+  }, [table, hiddenColumnIds]);
+
   return (
     <div>
       <div className="flex items-center py-4">
@@ -71,6 +82,7 @@ export function DataTable<TData, TValue>({
           searchFilters={searchFilters}
           dateFilter={dateFilter}
           numberFilter={numberFilter}
+          hiddenColumnIds={hiddenColumnIds}
         />
       </div>
 

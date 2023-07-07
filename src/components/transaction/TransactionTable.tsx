@@ -13,26 +13,22 @@ import { TransactionType } from "../../server/db/schema/transactions";
 import { DataTableColumnHeader } from "../ui/DataTableColumnHeader";
 import Link from "next/link";
 import { mapEnumToLabelValuePair } from "../../utils";
-import { type LabelValuePair } from "../form/SelectInput";
 import { cn } from "../../lib/utils";
 import { addHours, format } from "date-fns";
 import { isBetween } from "../../utils/date";
-import type { RouterOutputs } from "../../utils/trpc";
 import { TransactionActions } from "./TransactionActions";
 import type { Wallet } from "../../pages/wallets/[id]";
-
-export type TransactionWithWallets =
-  RouterOutputs["transaction"]["getTransactionsByWallet"][number];
+import type { TransactionWithWallets } from "../../server/trpc/router/transaction";
 
 interface TransactionTableProps {
-  wallet: Wallet;
-  walletsExcludingSelf: LabelValuePair[];
+  wallet?: Wallet;
+  wallets: Wallet[];
   transactions: TransactionWithWallets[];
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
   wallet,
-  walletsExcludingSelf,
+  wallets,
   transactions,
 }) => {
   const columns: ColumnDef<TransactionWithWallets>[] = [
@@ -40,10 +36,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       id: "date",
       header: "Date",
       cell: ({ row }) => {
-        return format(addHours(new Date(row.original.date), 8), "iii, PPP");
+        return format(
+          addHours(new Date(row.original.transactions.date), 8),
+          "iii, PPP"
+        );
       },
       filterFn: (row, _id, value) => {
-        const date = row.original.date;
+        const date = row.original.transactions.date;
         const from = value.from;
         const to = value.to;
 
@@ -63,43 +62,61 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
       },
     },
     {
+      id: "name",
       header: "Name",
-      accessorKey: "name",
+      cell: ({ row }) => row.original.transactions.name,
+      filterFn: (row, _id, value) =>
+        row.original.transactions.name
+          .toLowerCase()
+          .includes(value.toLowerCase()),
     },
     {
-      header: "Description",
       id: "description",
+      header: "Description",
       cell: ({ row }) => {
         return (
-          row.original.description ?? (
+          row.original.transactions.description ?? (
             <p className="text-muted-foreground">n/a</p>
           )
         );
       },
       filterFn: (row, _id, value) =>
-        row.original.description?.includes(value) ?? false,
+        row.original.transactions.description
+          ?.toLowerCase()
+          .includes(value.toLowerCase()) ?? false,
     },
     {
+      id: "type",
       header: "Type",
-      accessorKey: "type",
-      filterFn: (row, id, value) => value.includes(row.getValue(id)),
+      cell: ({ row }) => row.original.transactions.type,
+      filterFn: (row, _id, value) =>
+        value.includes(row.original.transactions.type),
     },
     {
-      id: "transfer",
+      id: "transferredFrom",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Transferred To/From" />
+        <DataTableColumnHeader column={column} title="Transferred From" />
+      ),
+      cell: ({ row }) => (
+        <Link
+          href={`/wallets/${row.original.wallets.id}`}
+          className="underline"
+        >
+          {row.original.wallets.name}
+        </Link>
+      ),
+      filterFn: (row, _id, value) => value.includes(row.original.wallets.id),
+    },
+    {
+      id: "transferredTo",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Transferred To" />
       ),
       cell: ({ row }) => {
-        const isTransfer = row.original.type === TransactionType.TRANSFER;
-
-        if (
-          isTransfer &&
-          row.original.wallet.id === wallet.id &&
-          row.original.internalWallet
-        ) {
+        if (!!row.original.internalWallet) {
           return (
             <Link
-              href={`/wallets/${row.original.internalWallet.id}`}
+              href={`/wallets/${row.original.transactions.internalWalletId}`}
               className="underline"
             >
               {row.original.internalWallet.name}
@@ -107,30 +124,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           );
         }
 
-        if (isTransfer) {
-          return (
-            <Link
-              href={`/wallets/${row.original.wallet.id}`}
-              className="underline"
-            >
-              {row.original.wallet.name}
-            </Link>
-          );
-        }
-
         return <p className="text-muted-foreground">n/a</p>;
       },
-      filterFn: (row, _id, value) => {
-        const isTransfer = row.original.type === TransactionType.TRANSFER;
-
-        if (isTransfer && row.original.wallet.id === wallet.id) {
-          return value.includes(row.original.internalWallet?.id);
-        }
-
-        if (isTransfer && row.original.wallet.id !== wallet.id) {
-          return value.includes(row.original.wallet.id);
-        }
-      },
+      filterFn: (row, _id, value) =>
+        value.includes(row.original.internalWallet?.id),
     },
     {
       id: "amount",
@@ -138,9 +135,34 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         return <p className="text-right">Amount</p>;
       },
       cell: ({ row }) => {
+        if (!wallet) {
+          const isExpense =
+            row.original.transactions.type === TransactionType.EXPENSE;
+          const isIncome =
+            row.original.transactions.type === TransactionType.INCOME;
+          const isTransfer =
+            row.original.transactions.type === TransactionType.TRANSFER;
+          return (
+            <p
+              className={cn("text-right", {
+                "text-destructive": isExpense,
+                "text-success": !isExpense,
+                "text-muted-foreground": isTransfer,
+              })}
+            >
+              {isExpense && <span>- </span>}
+              {isIncome && <span>+ </span>}
+              <span>
+                &#8369;{" "}
+                {numeral(row.original.transactions.amount).format("0,0.00")}
+              </span>
+            </p>
+          );
+        }
+
         const isExpense =
-          wallet.id === row.original.wallet.id &&
-          row.original.type !== TransactionType.INCOME;
+          wallet.id === row.original.transactions.walletId &&
+          row.original.transactions.type !== TransactionType.INCOME;
 
         return (
           <p
@@ -150,16 +172,45 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             })}
           >
             {isExpense ? <span>- </span> : <span>+ </span>}
-            <span>&#8369; {numeral(row.original.amount).format("0,0.00")}</span>
+            <span>
+              &#8369;{" "}
+              {numeral(row.original.transactions.amount).format("0,0.00")}
+            </span>
           </p>
         );
       },
       filterFn: (row, _id, value) => {
+        if (!wallet) {
+          const amount =
+            row.original.transactions.type === TransactionType.EXPENSE
+              ? -row.original.transactions.amount
+              : row.original.transactions.amount;
+
+          if (
+            value?.min !== null &&
+            value?.min !== undefined &&
+            (value?.max === null || value?.max === undefined)
+          ) {
+            return amount >= value.min;
+          }
+
+          if (
+            value?.min !== null &&
+            value?.min !== undefined &&
+            value?.max !== null &&
+            value?.max !== undefined
+          ) {
+            return amount >= value.min && amount <= value.max;
+          }
+
+          return false;
+        }
+
         const amount =
-          row.original.type !== TransactionType.INCOME &&
-          row.original.wallet.id === wallet.id
-            ? -row.original.amount
-            : row.original.amount;
+          row.original.transactions.type !== TransactionType.INCOME &&
+          row.original.transactions.walletId === wallet.id
+            ? -row.original.transactions.amount
+            : row.original.transactions.amount;
 
         if (
           value?.min !== null &&
@@ -197,8 +248,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <TransactionActions
                 transaction={row.original}
-                wallet={wallet}
-                walletsExcludingSelf={walletsExcludingSelf}
+                wallets={wallets}
               />
             </DropdownMenuContent>
           </DropdownMenu>
@@ -207,24 +257,35 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     },
   ];
 
+  const multiSelectFilters = [
+    {
+      columnId: "type",
+      options: mapEnumToLabelValuePair(TransactionType),
+      title: "Transaction Type",
+      icon: ArrowRightLeft,
+    },
+    {
+      columnId: "transferredTo",
+      options: wallets.map((w) => ({ label: w.name, value: w.id })),
+      title: "Transferred To",
+      icon: Send,
+    },
+  ];
+
+  if (!wallet) {
+    multiSelectFilters.splice(1, 0, {
+      columnId: "transferredFrom",
+      options: wallets.map((w) => ({ label: w.name, value: w.id })),
+      title: "Transferred From",
+      icon: Send,
+    });
+  }
+
   return (
     <DataTable
       columns={columns}
       data={transactions}
-      multiSelectFilters={[
-        {
-          columnId: "type",
-          options: mapEnumToLabelValuePair(TransactionType),
-          title: "Transaction Type",
-          icon: ArrowRightLeft,
-        },
-        {
-          columnId: "transfer",
-          options: walletsExcludingSelf,
-          title: "Transferred To/From",
-          icon: Send,
-        },
-      ]}
+      multiSelectFilters={multiSelectFilters}
       searchFilters={[
         {
           columnId: "name",

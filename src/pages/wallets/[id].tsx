@@ -17,7 +17,10 @@ import { WalletActions } from "../../components/wallet/WalletActions";
 import { Spinner } from "../../components/ui/Spinner";
 import { TransactionForm } from "../../components/transaction/TransactionForm";
 import { WalletTypeIcon } from "../../components/wallet/WalletTypeIcon";
-import { PaymentNetwork, WalletType } from "../../server/db/schema/wallets";
+import type {
+  PaymentNetwork,
+  WalletType,
+} from "../../server/db/schema/wallets";
 import { PaymentNetworkIcon } from "../../components/wallet/PaymentNetworkIcon";
 
 export type Wallet = RouterOutputs["wallet"]["getAll"][number];

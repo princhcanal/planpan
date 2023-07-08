@@ -13,16 +13,31 @@ import {
 import { ArrowLeftRight } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { useState } from "react";
+import numeral from "numeral";
 
 const Dashboard: NextPage = () => {
   const { data: transactionsData, isFetching: transactionsFetching } =
     trpc.transaction.getAllTransactions.useQuery();
   const { data: walletsData } = trpc.wallet.getAll.useQuery();
+  const { data: totalBalanceData } = trpc.wallet.getTotalBalance.useQuery();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   return (
     <div>
       <h2 className="mb-2 text-3xl font-bold">Dashboard</h2>
+
+      <div>
+        <p className="text-sm text-muted-foreground">Total Balance</p>
+        <h1 className="mb-2 text-4xl font-extrabold text-highlight">
+          &#8369;{" "}
+          <span>
+            {numeral(totalBalanceData?.totalBalance).format("0,0", Math.floor)}
+          </span>
+          <span className="text-lg">
+            {numeral(totalBalanceData?.totalBalance).format(".00")}
+          </span>
+        </h1>
+      </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

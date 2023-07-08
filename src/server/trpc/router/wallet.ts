@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { wallet, withId } from "../../../types/zod";
 import { wallets } from "../../db/schema/wallets";
 import { protectedProcedure, router } from "../trpc";
@@ -60,5 +60,11 @@ export const walletRouter = router({
         }
       }
     }
+  }),
+  getTotalBalance: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db
+      .select({ totalBalance: sql<number>`SUM(${wallets.balance})` })
+      .from(wallets)
+      .then((res) => res[0]);
   }),
 });

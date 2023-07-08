@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "pg",
-  "id": "a407bed8-a444-47c1-97da-5bb0d8eed102",
+  "id": "ddd996c6-27ce-4aad-be34-8edaf909a5e0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "attachments": {
@@ -498,6 +498,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "wallet_type",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_network": {
+          "name": "payment_network",
+          "type": "payment_network",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -505,80 +517,6 @@
         "wallets_user_id_users_id_fk": {
           "name": "wallets_user_id_users_id_fk",
           "tableFrom": "internalWallet",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {}
-    },
-    "wallet": {
-      "name": "wallet",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "balance": {
-          "name": "balance",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "image": {
-          "name": "image",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "wallets_user_id_users_id_fk": {
-          "name": "wallets_user_id_users_id_fk",
-          "tableFrom": "wallet",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -646,6 +584,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "wallet_type",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_network": {
+          "name": "payment_network",
+          "type": "payment_network",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -674,6 +624,25 @@
         "EXPENSE": "EXPENSE",
         "INCOME": "INCOME",
         "TRANSFER": "TRANSFER"
+      }
+    },
+    "payment_network": {
+      "name": "payment_network",
+      "values": {
+        "MASTERCARD": "MASTERCARD",
+        "VISA": "VISA",
+        "JCB": "JCB",
+        "AMEX": "AMEX"
+      }
+    },
+    "wallet_type": {
+      "name": "wallet_type",
+      "values": {
+        "SAVINGS": "SAVINGS",
+        "CREDIT": "CREDIT",
+        "CASH": "CASH",
+        "E-WALLET": "E-WALLET",
+        "INVESTMENT": "INVESTMENT"
       }
     }
   },

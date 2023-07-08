@@ -2,7 +2,9 @@ import { z } from "zod";
 import {
   entitySelectSchema,
   optionalDateStringSchema,
+  paymentNetworkSchema,
   transactionTypeSchema,
+  walletTypeSchema,
 } from "../components/form/Form";
 import { TransactionType } from "../server/db/schema/transactions";
 
@@ -12,6 +14,8 @@ export const wallet = z.object({
   name: z.string().min(1, "Required"),
   description: z.string().optional(),
   balance: z.number().nonnegative(),
+  type: walletTypeSchema,
+  paymentNetwork: paymentNetworkSchema,
 });
 
 export const joinedWallet = z.object({

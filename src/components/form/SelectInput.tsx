@@ -30,6 +30,8 @@ export const SelectInput = ({
   disabled,
 }: SelectInputProps) => {
   const { field, error } = useTsController<string>();
+  console.log("options:", options);
+  console.log("field.value:", field.value);
 
   return (
     <fieldset className={classNames("mb-2", { hidden })}>

@@ -4,6 +4,18 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 
+DO $$ BEGIN
+ CREATE TYPE "payment_network" AS ENUM('MASTERCARD', 'VISA', 'JCB', 'AMEX');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+ CREATE TYPE "wallet_type" AS ENUM('SAVINGS', 'CREDIT', 'CASH', 'E-WALLET', 'INVESTMENT');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE IF NOT EXISTS "attachments" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -75,18 +87,9 @@ CREATE TABLE IF NOT EXISTS "internalWallet" (
 	"name" text NOT NULL,
 	"description" text,
 	"balance" numeric NOT NULL,
-	"image" text
-);
-
-CREATE TABLE IF NOT EXISTS "wallet" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"balance" numeric NOT NULL,
-	"image" text
+	"image" text,
+	"type" wallet_type NOT NULL,
+	"payment_network" payment_network
 );
 
 CREATE TABLE IF NOT EXISTS "wallets" (
@@ -97,7 +100,9 @@ CREATE TABLE IF NOT EXISTS "wallets" (
 	"name" text NOT NULL,
 	"description" text,
 	"balance" numeric NOT NULL,
-	"image" text
+	"image" text,
+	"type" wallet_type NOT NULL,
+	"payment_network" payment_network
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "provider_provider_account_id_unique_idx" ON "accounts" ("provider","provider_account_id");
@@ -136,12 +141,6 @@ END $$;
 
 DO $$ BEGIN
  ALTER TABLE "internalWallet" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
- ALTER TABLE "wallet" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

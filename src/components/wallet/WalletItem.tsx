@@ -1,7 +1,12 @@
 import numeral from "numeral";
 import Link from "next/link";
-import { Circle, CreditCard } from "lucide-react";
-import { type Wallet } from "../../server/db/schema/wallets";
+import type {
+  PaymentNetwork,
+  Wallet,
+  WalletType,
+} from "../../server/db/schema/wallets";
+import { WalletTypeIcon } from "./WalletTypeIcon";
+import { PaymentNetworkIcon } from "./PaymentNetworkIcon";
 
 interface WalletItemProps {
   wallet: Wallet;
@@ -14,8 +19,7 @@ export const WalletItem: React.FC<WalletItemProps> = ({ wallet }) => {
       className="flex h-52 max-w-full basis-full flex-col justify-between rounded-xl bg-gradient-to-br from-highlight to-[#3D4793] p-4 text-background dark:text-foreground md:max-w-[48%] md:basis-[48%] lg:max-w-[32%] lg:basis-[32%]"
     >
       <div className="flex items-center justify-end">
-        {/* TODO: ( insert wallet type ) */}
-        <CreditCard />
+        <WalletTypeIcon walletType={wallet.type as WalletType} />
       </div>
 
       <p className="text-3xl font-extrabold">
@@ -26,21 +30,14 @@ export const WalletItem: React.FC<WalletItemProps> = ({ wallet }) => {
       <div className="flex items-center justify-between">
         <div className="overflow-hidden">
           <p className="truncate font-semibold">{wallet.name}</p>
-          <p className="truncate text-slate-400 dark:text-muted-foreground">
-            {wallet.description}
-          </p>
+          <p className="truncate text-slate-300">{wallet.description}</p>
         </div>
 
-        <div className="flex">
-          {/* TODO: insert card type icon (if applicable) */}
-          <Circle fill="red" color="red" size="40" />
-          <Circle
-            fill="orange"
-            color="orange"
-            className="ml-[-0.75em]"
-            size="40"
+        {wallet.paymentNetwork && (
+          <PaymentNetworkIcon
+            paymentNetwork={wallet.paymentNetwork as PaymentNetwork}
           />
-        </div>
+        )}
       </div>
     </Link>
   );

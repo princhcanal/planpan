@@ -1,10 +1,7 @@
 import { type NextPage } from "next";
-import { Form } from "../../components/form/Form";
 import { WalletItem } from "../../components/wallet/WalletItem";
 import { Button } from "../../components/ui/Button";
-import { wallet } from "../../types/zod";
 import { trpc } from "../../utils/trpc";
-import { type z } from "zod";
 import { useState } from "react";
 import {
   Dialog,
@@ -16,21 +13,11 @@ import {
 import { Plus } from "lucide-react";
 import { Spinner } from "../../components/ui/Spinner";
 import { WalletSkeleton } from "../../components/wallet/WalletSkeleton";
+import { WalletForm } from "../../components/wallet/WalletForm";
 
 const Wallets: NextPage = () => {
-  const utils = trpc.useContext();
   const { data, isLoading, isFetching } = trpc.wallet.getAll.useQuery();
-  const createWallet = trpc.wallet.create.useMutation({
-    onSuccess: () => {
-      utils.wallet.getAll.invalidate();
-      setIsOpen(false);
-    },
-  });
   const [isOpen, setIsOpen] = useState(false);
-
-  const onSubmit = (data: z.infer<typeof wallet>) => {
-    createWallet.mutate(data);
-  };
 
   return (
     <div>
@@ -50,36 +37,7 @@ const Wallets: NextPage = () => {
               <DialogTitle>Create Wallet</DialogTitle>
             </DialogHeader>
 
-            <Form
-              schema={wallet}
-              onSubmit={onSubmit}
-              props={{
-                name: {
-                  placeholder: "BPI Savings Account",
-                  label: "Name",
-                },
-                description: {
-                  placeholder: "Main Savings Account",
-                  label: "Description",
-                  type: "textarea",
-                },
-                balance: {
-                  placeholder: "5,000",
-                  label: "Balance",
-                  max: 1_000_000_000_000,
-                  currency: "₱",
-                },
-              }}
-              renderAfter={() => (
-                <Button
-                  className="mt-4 w-full"
-                  isLoading={createWallet.isLoading}
-                  type="submit"
-                >
-                  {createWallet.isLoading ? "Saving..." : "Save"}
-                </Button>
-              )}
-            />
+            <WalletForm onSuccess={() => setIsOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>

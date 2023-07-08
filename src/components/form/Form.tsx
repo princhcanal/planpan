@@ -7,6 +7,7 @@ import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
 import { TransactionType } from "../../server/db/schema/transactions";
 import { TabInput } from "./TabInput";
+import { PaymentNetwork, WalletType } from "../../server/db/schema/wallets";
 
 export const dateStringSchema = createUniqueFieldSchema(
   z.string().datetime(),
@@ -27,6 +28,29 @@ export const transactionTypeSchema = createUniqueFieldSchema(
   "transactionTypeSchema"
 );
 
+export const walletTypeSchema = createUniqueFieldSchema(
+  z.enum([
+    WalletType.SAVINGS,
+    WalletType.CREDIT,
+    WalletType.CASH,
+    WalletType.E_WALLET,
+    WalletType.INVESTMENT,
+  ]),
+  "walletTypeSchema"
+);
+
+export const paymentNetworkSchema = createUniqueFieldSchema(
+  z
+    .enum([
+      PaymentNetwork.MASTERCARD,
+      PaymentNetwork.VISA,
+      PaymentNetwork.JCB,
+      PaymentNetwork.AMEX,
+    ])
+    .optional(),
+  "paymentNetworkSchema"
+);
+
 export const entitySelectSchema = createUniqueFieldSchema(
   z.string().uuid().optional(),
   "entitySelectSchema"
@@ -38,6 +62,8 @@ const mapping = [
   [optionalDateStringSchema, DateInput] as const,
   [transactionTypeSchema, TabInput] as const,
   [entitySelectSchema, SelectInput] as const,
+  [walletTypeSchema, SelectInput] as const,
+  [paymentNetworkSchema, SelectInput] as const,
   [z.number(), NumberInput] as const,
   [z.boolean(), Checkbox] as const,
 ] as const;

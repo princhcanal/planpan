@@ -6,9 +6,40 @@ import {
   uuid,
   timestamp,
   numeric,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { transactions } from "./transactions";
+
+export const walletTypeEnum = pgEnum("wallet_type", [
+  "SAVINGS",
+  "CREDIT",
+  "CASH",
+  "E-WALLET",
+  "INVESTMENT",
+]);
+
+export const paymentNetworkEnum = pgEnum("payment_network", [
+  "MASTERCARD",
+  "VISA",
+  "JCB",
+  "AMEX",
+]);
+
+export enum WalletType {
+  SAVINGS = "SAVINGS",
+  CREDIT = "CREDIT",
+  CASH = "CASH",
+  E_WALLET = "E-WALLET",
+  INVESTMENT = "INVESTMENT",
+}
+
+export enum PaymentNetwork {
+  MASTERCARD = "MASTERCARD",
+  VISA = "VISA",
+  JCB = "JCB",
+  AMEX = "AMEX",
+}
 
 export const wallets = pgTable("wallets", {
   id: uuid("id").notNull().defaultRandom().primaryKey(),
@@ -21,6 +52,8 @@ export const wallets = pgTable("wallets", {
   description: text("description"),
   balance: numeric("balance").notNull(),
   image: text("image"),
+  type: walletTypeEnum("type").notNull(),
+  paymentNetwork: paymentNetworkEnum("payment_network"),
 });
 
 export const transactionsWallet = alias(wallets, "wallets");

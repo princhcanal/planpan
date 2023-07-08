@@ -1,5 +1,5 @@
 import { db } from "./index";
-import { wallets } from "./schema/wallets";
+import { PaymentNetwork, WalletType, wallets } from "./schema/wallets";
 import { TransactionType, transactions } from "./schema/transactions";
 
 export const addSeedData = async (userId: string) => {
@@ -10,6 +10,8 @@ export const addSeedData = async (userId: string) => {
       userId,
       balance: "50000",
       description: "Main Savings Account",
+      type: WalletType.SAVINGS,
+      paymentNetwork: PaymentNetwork.MASTERCARD,
     })
     .returning()
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -22,6 +24,8 @@ export const addSeedData = async (userId: string) => {
       userId,
       balance: "50000",
       description: "Secondary Savings Account",
+      type: WalletType.SAVINGS,
+      paymentNetwork: PaymentNetwork.MASTERCARD,
     })
     .returning()
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

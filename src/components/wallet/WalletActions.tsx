@@ -1,7 +1,5 @@
 import { Pencil, Trash } from "lucide-react";
 import { useState } from "react";
-import type { z } from "zod";
-import { withId, wallet as walletSchema } from "../../types/zod";
 import { trpc } from "../../utils/trpc";
 import {
   AlertDialogHeader,
@@ -22,8 +20,8 @@ import {
 } from "../ui/Dialog";
 import { Button } from "../ui/Button";
 import type { Wallet } from "../../server/db/schema/wallets";
-import { Form } from "../form/Form";
 import { useRouter } from "next/router";
+import { WalletForm } from "./WalletForm";
 
 interface WalletActionsProps {
   wallet: Wallet;
@@ -34,13 +32,6 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
   const router = useRouter();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const editWallet = trpc.wallet.edit.useMutation({
-    onSuccess: () => {
-      utils.wallet.getAll.invalidate();
-      utils.wallet.getOne.invalidate({ id: wallet.id });
-      setIsEditDialogOpen(false);
-    },
-  });
   const deleteWallet = trpc.wallet.delete.useMutation({
     onSuccess: () => {
       utils.wallet.getAll.invalidate();
@@ -48,14 +39,9 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
       router.replace("/wallets");
     },
   });
-  const editWalletSchema = walletSchema.merge(withId);
-
-  const onEditSubmit = (data: z.infer<typeof editWalletSchema>) => {
-    editWallet.mutate(data);
-  };
 
   return (
-    <>
+    <div className="flex gap-2">
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogTrigger asChild>
           <Button variant="secondary" icon={Pencil}>
@@ -68,40 +54,9 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
             <DialogTitle>Edit Wallet</DialogTitle>
           </DialogHeader>
 
-          <Form
-            schema={editWalletSchema}
-            onSubmit={onEditSubmit}
-            props={{
-              name: {
-                placeholder: "BPI Savings Account",
-                label: "Name",
-              },
-              description: {
-                placeholder: "Main Savings Account",
-                label: "Description",
-                type: "textarea",
-              },
-              balance: {
-                placeholder: "5,000",
-                label: "Balance",
-                max: 1_000_000_000_000,
-                currency: "₱",
-              },
-              id: {
-                type: "hidden",
-              },
-            }}
-            defaultValues={{
-              name: wallet.name,
-              description: wallet.description ?? undefined,
-              balance: Number.parseFloat(wallet.balance) ?? undefined,
-              id: wallet.id,
-            }}
-            renderAfter={() => (
-              <Button className="w-full" isLoading={editWallet.isLoading}>
-                Save
-              </Button>
-            )}
+          <WalletForm
+            existingWallet={wallet}
+            onSuccess={() => setIsEditDialogOpen(false)}
           />
         </DialogContent>
       </Dialog>
@@ -137,6 +92,6 @@ export const WalletActions: React.FC<WalletActionsProps> = ({ wallet }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 };

@@ -16,6 +16,9 @@ import { ArrowLeftRight, Wallet } from "lucide-react";
 import { WalletActions } from "../../components/wallet/WalletActions";
 import { Spinner } from "../../components/ui/Spinner";
 import { TransactionForm } from "../../components/transaction/TransactionForm";
+import { WalletTypeIcon } from "../../components/wallet/WalletTypeIcon";
+import { PaymentNetwork, WalletType } from "../../server/db/schema/wallets";
+import { PaymentNetworkIcon } from "../../components/wallet/PaymentNetworkIcon";
 
 export type Wallet = RouterOutputs["wallet"]["getAll"][number];
 
@@ -57,8 +60,22 @@ const WalletDetails: NextPage = () => {
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <WalletActions wallet={wallet.data} />
+        <div className="flex flex-col gap-2">
+          <div className="mb-2">
+            <WalletActions wallet={wallet.data} />
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <WalletTypeIcon walletType={wallet.data.type as WalletType} />
+
+            {wallet.data.paymentNetwork && (
+              <div className="flex items-center gap-2">
+                <PaymentNetworkIcon
+                  paymentNetwork={wallet.data.paymentNetwork as PaymentNetwork}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
